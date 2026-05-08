@@ -26,7 +26,6 @@
         <a class="{{ 'active' if active_page == 'dashboard' }}" href="{{ url_for('dashboard.dashboard') }}"><i class="bi bi-grid-1x2"></i><span>Dashboard</span></a>
         <a class="{{ 'active' if active_page == 'url_scanner' }}" href="{{ url_for('dashboard.url_scanner') }}"><i class="bi bi-globe2"></i><span>URL Scanner</span></a>
         <a class="{{ 'active' if active_page == 'email_analyzer' }}" href="{{ url_for('dashboard.email_analyzer') }}"><i class="bi bi-envelope"></i><span>Email Analyzer</span></a>
-        <a class="{{ 'active' if active_page == 'threat_intelligence' }}" href="{{ url_for('dashboard.threat_intelligence') }}"><i class="bi bi-crosshair"></i><span>Reputation Lookup</span></a>
         <a class="{{ 'active' if active_page == 'logs' }}" href="{{ url_for('dashboard.logs') }}"><i class="bi bi-terminal"></i><span>Detection Logs</span></a>
         <a class="{{ 'active' if active_page == 'reports' }}" href="{{ url_for('dashboard.reports') }}"><i class="bi bi-file-earmark-bar-graph"></i><span>Reports</span></a>
     </nav>
@@ -35,12 +34,7 @@
 
 <main class="pg-main">
     <header class="pg-topbar">
-        <button class="mobile-menu icon-button" type="button" data-sidebar-open title="Open menu" aria-label="Open menu"><i class="bi bi-list"></i></button>
         <a class="top-brand" href="{{ url_for('dashboard.dashboard') }}"><i class="bi bi-shield-fill-check"></i> PhishGuard AI</a>
-        <div class="top-actions">
-            <button class="icon-button" type="button" title="Notifications"><i class="bi bi-bell"></i></button>
-            <button class="icon-button" type="button" title="Account"><i class="bi bi-person"></i></button>
-        </div>
     </header>
     <section class="pg-content">
         {% block content %}{% endblock %}

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PhishGuard AI</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <main>
+        <header>
+            <div class="brand-mark">P</div>
+            <div>
+                <h1>PhishGuard AI</h1>
+                <p>Website safety check</p>
+            </div>
+        </header>
+
+        <section class="verdict" id="verdict">
+            <div class="status-icon">?</div>
+            <div>
+                <span>Current page</span>
+                <strong>Checking this site</strong>
+                <p>Open any website tab to see a simple safety result.</p>
+            </div>
+        </section>
+
+        <section class="reason-card" id="reasonCard" hidden></section>
+
+        <button id="scanActiveTab" type="button">Scan Active Tab</button>
+    </main>
+    <script src="popup.js"></script>
+</body>
+</html>

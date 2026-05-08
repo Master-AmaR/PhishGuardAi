@@ -324,99 +324,6 @@ function renderEmailResult(result, resultBox) {
     refreshThreatTimeline();
 }
 
-function bindIntelLookup() {
-    const form = qs("[data-intel-lookup]");
-    if (!form) return;
-    form.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const target = new FormData(form).get("target");
-        const box = qs("#intelResult");
-        try {
-            setFormLoading(form, true, "Checking");
-            box?.classList.add("loading-surface");
-            const result = await postJson("/api/intel/reputation", { target });
-            renderIntelResult(result);
-        } catch (error) {
-            box.textContent = error.message;
-        } finally {
-            setFormLoading(form, false);
-            box?.classList.remove("loading-surface");
-        }
-    });
-}
-
-function renderIntelResult(result) {
-    const verdict = qs("#reputationVerdict");
-    const flagged = qs("#intelFlagged");
-    const total = qs("#intelTotal");
-    const status = qs("#intelVtStatus");
-    const proof = qs("#intelProofLink");
-    const signals = qs("#intelSignals");
-    const output = qs("#intelResult");
-    const vtMeter = qs("#intelVtMeter");
-    const vendorSummary = qs("#vendorSummary");
-    const vt = result.virustotal || {};
-    const heuristic = result.heuristic || {};
-    const features = heuristic.features || {};
-    const flaggedCount = Number(vt.malicious || 0) + Number(vt.suspicious || 0);
-    const totalCount = Number(vt.total || 0);
-    const verdictLabel = vt.detection_ratio === "Pending"
-        ? "Submitted For Analysis"
-        : flaggedCount > 0
-            ? "Known Suspicious"
-            : heuristic.threat_score >= 55
-                ? "Locally Suspicious"
-                : "No Public Detections";
-    const verdictCopy = vt.detection_ratio === "Pending"
-        ? "VirusTotal accepted the target and is preparing analysis results."
-        : flaggedCount > 0
-            ? `${flaggedCount} security vendor${flaggedCount === 1 ? "" : "s"} flagged this target.`
-            : "VirusTotal did not report malicious or suspicious detections for this target.";
-
-    if (verdict) {
-        verdict.innerHTML = `<span>Reputation Verdict</span><h3>${escapeHtml(verdictLabel)}</h3><p>${escapeHtml(verdictCopy)}</p>`;
-        verdict.classList.toggle("danger", flaggedCount > 0);
-    }
-    if (flagged) flagged.textContent = String(flaggedCount);
-    if (total) total.textContent = vt.detection_ratio === "Pending" ? "Pending" : String(totalCount || 0);
-    if (status) status.textContent = vt.status || "Unavailable";
-    if (vtMeter) vtMeter.style.width = totalCount ? `${Math.min((flaggedCount / totalCount) * 100, 100)}%` : "0%";
-    if (proof) {
-        if (vt.gui_url) {
-            proof.href = vt.gui_url;
-            proof.classList.remove("disabled");
-            proof.innerHTML = `<i class="bi bi-box-arrow-up-right"></i> Open VirusTotal Report`;
-        } else {
-            proof.href = "#";
-            proof.classList.add("disabled");
-            proof.innerHTML = `<i class="bi bi-box-arrow-up-right"></i> Report Unavailable`;
-        }
-    }
-    if (signals) {
-        signals.innerHTML = `<article><span>Heuristic Score</span><strong>${escapeHtml(heuristic.threat_score ?? "n/a")}/100</strong></article>
-<article><span>Domain</span><strong>${escapeHtml(features.domain || result.target)}</strong></article>
-<article><span>HTTPS</span><strong>${features.https_enabled ? "Enabled" : "Not enabled"}</strong></article>
-<article><span>Keywords</span><strong>${escapeHtml((features.keyword_hits || []).join(", ") || "None")}</strong></article>`;
-    }
-    if (vendorSummary) {
-        vendorSummary.innerHTML = `<article><span>Malicious</span><strong>${escapeHtml(vt.malicious ?? 0)}</strong></article>
-<article><span>Suspicious</span><strong>${escapeHtml(vt.suspicious ?? 0)}</strong></article>
-<article><span>Reputation</span><strong>${escapeHtml(vt.reputation ?? 0)}</strong></article>
-<article><span>Status</span><strong>${escapeHtml(vt.status || "Unavailable")}</strong></article>`;
-    }
-    if (output) {
-        output.textContent = `Target: ${result.target}
-Normalized target: ${vt.normalized_url || result.target}
-VirusTotal status: ${vt.status || "Unavailable"}
-VirusTotal ratio: ${vt.detection_ratio || "n/a"}
-VirusTotal reputation: ${vt.reputation ?? "n/a"}
-Local classification: ${heuristic.classification || "n/a"}
-Local score: ${heuristic.threat_score ?? "n/a"}/100
-Action suggestion: ${heuristic.action || "n/a"}
-Evidence link: ${vt.gui_url || "Unavailable"}`;
-    }
-}
-
 function bindLogSearch() {
     const input = qs("#logSearch");
     const table = qs("#logsTable");
@@ -471,6 +378,5 @@ document.addEventListener("DOMContentLoaded", () => {
     initCounters();
     bindUrlScanners();
     bindEmailScanner();
-    bindIntelLookup();
     bindLogSearch();
 });

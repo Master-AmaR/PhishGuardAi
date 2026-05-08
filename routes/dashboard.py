@@ -35,16 +35,6 @@ def email_analyzer():
     return render_template("email_analyzer.html", active_page="email_analyzer")
 
 
-@dashboard_bp.route("/threat-intelligence")
-def threat_intelligence():
-    vt = VirusTotalService()
-    return render_template(
-        "threat_intelligence.html",
-        active_page="threat_intelligence",
-        vt_status="Connected" if vt.enabled else "API key not configured",
-    )
-
-
 @dashboard_bp.route("/logs")
 def logs():
     return render_template("logs.html", active_page="logs", logs=list_all_logs())

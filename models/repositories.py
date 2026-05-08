@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timedelta, timezone
 
 from database.db import get_db
 
@@ -122,40 +123,85 @@ def severity_counts():
     return {row["severity"]: row["count"] for row in rows}
 
 
-def threat_timeline(window="live"):
-    if window == "7d":
-        label_expr = "strftime('%m/%d', created_at)"
-        since_clause = "WHERE datetime(created_at) >= datetime('now', '-7 days')"
-        limit = 7
-    elif window == "24h":
-        label_expr = "strftime('%H:00', created_at)"
-        since_clause = "WHERE datetime(created_at) >= datetime('now', '-24 hours')"
-        limit = 24
-    else:
-        label_expr = "strftime('%H:%M', created_at)"
-        since_clause = ""
-        limit = 8
+def _parse_utc_timestamp(value):
+    return datetime.fromisoformat(value).replace(tzinfo=timezone.utc)
 
-    rows = get_db().execute(
-        f"""
-        SELECT label, count
-        FROM (
-            SELECT {label_expr} AS label, COUNT(*) AS count, MIN(created_at) AS first_seen
-            FROM detection_logs
-            {since_clause}
-            GROUP BY label
-            ORDER BY first_seen DESC
-            LIMIT ?
+
+def _floor_time(value, minutes=60):
+    discard = timedelta(
+        minutes=value.minute % minutes,
+        seconds=value.second,
+        microseconds=value.microsecond,
+    )
+    return value - discard
+
+
+def threat_timeline(window="live"):
+    local_now = datetime.now(timezone.utc).astimezone()
+
+    if window == "7d":
+        bucket_count = 7
+        bucket_size = timedelta(days=1)
+        start = (local_now - timedelta(days=bucket_count - 1)).replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
         )
-        ORDER BY first_seen
+        labels = [
+            (start + bucket_size * index).strftime("%m/%d")
+            for index in range(bucket_count)
+        ]
+        key_for = lambda value: value.replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        ).strftime("%m/%d")
+    elif window == "24h":
+        bucket_count = 24
+        bucket_size = timedelta(hours=1)
+        start = _floor_time(local_now, 60) - bucket_size * (bucket_count - 1)
+        labels = [
+            (start + bucket_size * index).strftime("%H:00")
+            for index in range(bucket_count)
+        ]
+        key_for = lambda value: value.replace(
+            minute=0,
+            second=0,
+            microsecond=0,
+        ).strftime("%H:00")
+    else:
+        bucket_count = 12
+        bucket_size = timedelta(minutes=5)
+        start = _floor_time(local_now, 5) - bucket_size * (bucket_count - 1)
+        labels = [
+            (start + bucket_size * index).strftime("%H:%M")
+            for index in range(bucket_count)
+        ]
+        key_for = lambda value: _floor_time(value, 5).strftime("%H:%M")
+
+    since_utc = start.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    rows = get_db().execute(
+        """
+        SELECT created_at
+        FROM detection_logs
+        WHERE datetime(created_at) >= datetime(?)
+        ORDER BY created_at ASC, id ASC
         """,
-        (limit,),
+        (since_utc,),
     ).fetchall()
-    if not rows:
-        return {"labels": ["Now"], "values": [0]}
+
+    values = dict.fromkeys(labels, 0)
+    for row in rows:
+        local_created = _parse_utc_timestamp(row["created_at"]).astimezone(local_now.tzinfo)
+        label = key_for(local_created)
+        if label in values:
+            values[label] += 1
+
     return {
-        "labels": [row["label"] for row in rows],
-        "values": [row["count"] for row in rows],
+        "labels": labels,
+        "values": [values[label] for label in labels],
     }
 
 
