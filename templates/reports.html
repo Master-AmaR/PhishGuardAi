@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Reports | PhishGuard AI{% endblock %}
+{% block content %}
+<div class="page-heading with-actions hero-heading">
+    <div>
+        <span class="eyebrow"><i class="bi bi-file-earmark-bar-graph"></i> Report center</span>
+        <h2>Threat Reports</h2>
+        <p>Executive-ready phishing evidence summaries with response actions, confidence, and detection metadata.</p>
+    </div>
+    <button class="primary-action" onclick="window.print()"><i class="bi bi-filetype-pdf"></i> Generate PDF</button>
+</div>
+
+<section class="report-shell">
+    <div class="report-cover">
+        <div>
+            <span>PhishGuard AI</span>
+            <h3>Cybersecurity Threat Intelligence Report</h3>
+            <p>Prepared for Security Operations and Incident Response review.</p>
+        </div>
+        <i class="bi bi-shield-fill-check"></i>
+    </div>
+
+    <div class="report-summary">
+        <article><span>Risk Rating</span><strong>{{ logs[0].severity if logs else "Pending" }}</strong></article>
+        <article><span>Primary Vector</span><strong>{{ logs[0].threat_type if logs else "No Evidence" }}</strong></article>
+        <article><span>Recommended Action</span><strong>{{ logs[0].action_taken if logs else "Monitor" }}</strong></article>
+        <article><span>Evidence Items</span><strong>{{ logs|length }}</strong></article>
+    </div>
+
+    <div class="report-section-grid">
+        <section>
+            <h4>Executive Summary</h4>
+            <p>
+                Recent detections are consolidated from URL and email triage workflows. Each event includes classification,
+                severity, confidence, source, and response action for audit-ready review.
+            </p>
+        </section>
+        <section>
+            <h4>ML Confidence</h4>
+            {% set avg_conf = ((logs|sum(attribute="ai_confidence")) / (logs|length)) if logs else 0 %}
+            <div class="report-confidence">
+                <strong>{{ avg_conf|round(1) }}%</strong>
+                <div class="meter safe"><i style="width: {{ avg_conf|round(0, 'floor') }}%"></i></div>
+            </div>
+        </section>
+    </div>
+
+    <h4>Recent Evidence</h4>
+    <div class="table-responsive">
+        <table class="pg-table">
+            <thead><tr><th>Time</th><th>Target</th><th>Severity</th><th>Confidence</th><th>Action</th></tr></thead>
+            <tbody>
+            {% for log in logs %}
+                <tr>
+                    <td>{{ log.created_at }}</td>
+                    <td>{{ log.target_source }}</td>
+                    <td>{{ log.severity }}</td>
+                    <td>{{ log.ai_confidence|int }}%</td>
+                    <td>{{ log.action_taken }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="5">No scan evidence is available yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="report-response">
+        <article>
+            <h4>Recommended Response</h4>
+            <p>Block malicious URLs, quarantine suspicious email artifacts, preserve headers, and validate external reputation evidence before escalation.</p>
+        </article>
+        <article>
+            <h4>Analyst Notes</h4>
+            <p>Use the detection log export for downstream incident tracking and attach VirusTotal proof links when available.</p>
+        </article>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | PhishGuard AI{% endblock %}
+{% block content %}
+{% set total_severity = (severity_counts.values()|sum) if severity_counts else 0 %}
+{% set critical_count = severity_counts.get("Critical", 0) %}
+{% set high_count = severity_counts.get("High", 0) %}
+{% set medium_count = severity_counts.get("Medium", 0) %}
+{% set low_count = severity_counts.get("Low", 0) %}
+
+<div class="page-heading hero-heading">
+    <div>
+        <span class="eyebrow"><i class="bi bi-broadcast-pin"></i> SOC command surface</span>
+        <h2>PhishGuard AI Threat Operations</h2>
+        <p>AI-assisted phishing triage, reputation enrichment, and evidence logging in one analyst-ready workspace.</p>
+    </div>
+    <div class="system-health">
+        <span class="status-dot online"></span>
+        <div>
+            <strong>Monitoring Active</strong>
+            <small>VirusTotal: {{ vt_status }}</small>
+        </div>
+    </div>
+</div>
+
+<div class="metric-grid metric-grid-xl">
+    <article class="metric-card metric-primary">
+        <span>Total Scans</span>
+        <strong data-counter="{{ metrics.total_scans }}">{{ "{:,}".format(metrics.total_scans) }}</strong>
+        <small><i class="bi bi-database-check"></i> SQLite evidence history</small>
+    </article>
+    <article class="metric-card">
+        <span>AI Confidence</span>
+        <strong data-counter="{{ metrics.ml_accuracy }}">{{ metrics.ml_accuracy }}%</strong>
+        <small><i class="bi bi-cpu"></i> Average triage confidence</small>
+    </article>
+    <article class="metric-card danger">
+        <span>Active Threats</span>
+        <strong data-counter="{{ metrics.active_threats }}">{{ "%02d"|format(metrics.active_threats) }}</strong>
+        <small><i class="bi bi-exclamation-triangle"></i> High and critical events</small>
+    </article>
+    <article class="metric-card">
+        <span>Detections</span>
+        <strong data-counter="{{ metrics.phishing_detections }}">{{ metrics.phishing_detections }}</strong>
+        <small><i class="bi bi-shield-lock"></i> Non-benign verdicts</small>
+    </article>
+</div>
+
+<div class="dashboard-grid command-grid">
+    <section class="panel analytics-panel">
+        <div class="panel-title">
+            <div>
+                <h3>Threat Activity Timeline</h3>
+                <small>Hourly detection density</small>
+            </div>
+            <div class="segmented" aria-label="Timeline range">
+                <button class="active" type="button" data-timeline-range="live">Live</button>
+                <button type="button" data-timeline-range="24h">24H</button>
+                <button type="button" data-timeline-range="7d">7D</button>
+            </div>
+        </div>
+        <div class="chart-shell">
+            <canvas id="threatChart" height="230"></canvas>
+            <div class="scan-radar" aria-hidden="true"><span></span></div>
+        </div>
+    </section>
+
+    <section class="panel risk-panel">
+        <div class="panel-title">
+            <div>
+                <h3>Severity Matrix</h3>
+                <small>{{ total_severity }} logged events</small>
+            </div>
+            <i class="bi bi-grid-3x3-gap"></i>
+        </div>
+        <div class="risk-bars">
+            <article>
+                <span>Critical</span><strong>{{ critical_count }}</strong>
+                <div class="meter danger"><i style="width: {{ (critical_count / (total_severity or 1) * 100)|round(0, 'floor') }}%"></i></div>
+            </article>
+            <article>
+                <span>High</span><strong>{{ high_count }}</strong>
+                <div class="meter hot"><i style="width: {{ (high_count / (total_severity or 1) * 100)|round(0, 'floor') }}%"></i></div>
+            </article>
+            <article>
+                <span>Medium</span><strong>{{ medium_count }}</strong>
+                <div class="meter warn"><i style="width: {{ (medium_count / (total_severity or 1) * 100)|round(0, 'floor') }}%"></i></div>
+            </article>
+            <article>
+                <span>Low</span><strong>{{ low_count }}</strong>
+                <div class="meter safe"><i style="width: {{ (low_count / (total_severity or 1) * 100)|round(0, 'floor') }}%"></i></div>
+            </article>
+        </div>
+    </section>
+</div>
+
+<div class="dashboard-grid lower ops-grid">
+    <section class="panel scan-preview">
+        <div class="panel-title">
+            <div>
+                <h3><i class="bi bi-radar"></i> Rapid URL Triage</h3>
+                <small>Local heuristic engine plus reputation proofing</small>
+            </div>
+            <span class="live-chip"><i></i> Engine ready</span>
+        </div>
+        <form class="inline-scan" data-url-scan>
+            <input name="url" placeholder="Enter suspicious URL or domain" aria-label="Target URL">
+            <button type="submit"><i class="bi bi-lightning-charge"></i> Analyze</button>
+        </form>
+        <div class="score-row">
+            <div class="mini-box"><span>Feature Extractor</span><strong>Armed</strong><small>URL structure and host signals</small></div>
+            <div class="mini-box"><span>Reputation Layer</span><strong>{{ vt_status }}</strong><small>VirusTotal enrichment channel</small></div>
+            <div class="ring" data-score="0"><b>0</b><span>Threat Score<br>Awaiting Target</span></div>
+        </div>
+        <div class="scan-result compact" id="dashboardScanResult"></div>
+    </section>
+
+    <section class="panel">
+        <div class="panel-title">
+            <div>
+                <h3><i class="bi bi-activity"></i> Live Detection Stream</h3>
+                <small>Recent response actions</small>
+            </div>
+            <a href="{{ url_for('dashboard.logs') }}">View All <i class="bi bi-arrow-right"></i></a>
+        </div>
+        <div class="event-stream">
+            {% for log in logs %}
+                <article class="stream-event {{ log.severity|lower }}">
+                    <time>{{ log.created_at }}</time>
+                    <div>
+                        <strong>{{ log.threat_type }}</strong>
+                        <span>{{ log.target_source|truncate(54) }}</span>
+                    </div>
+                    <em>{{ log.action_taken }}</em>
+                </article>
+            {% else %}
+                <div class="empty-state">No detection activity has been recorded.</div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<section class="panel active-intel-panel">
+    <div class="panel-title">
+        <div>
+            <h3><i class="bi bi-crosshair2"></i> Active Threat Intelligence</h3>
+            <small>Priority events selected from the detection log</small>
+        </div>
+        <span class="live-chip"><i></i> Analyst queue</span>
+    </div>
+    <div class="intel-card-grid">
+        {% for threat in active_threats %}
+            <article class="threat-intel-card {{ threat.severity|lower }}">
+                <div class="threat-icon"><i class="bi bi-shield-exclamation"></i></div>
+                <div>
+                    <span>{{ threat.severity }} severity</span>
+                    <strong>{{ threat.threat_type }}</strong>
+                    <p>{{ threat.target_source }}</p>
+                </div>
+                <em>{{ threat.ai_confidence|int }}%</em>
+            </article>
+        {% else %}
+            <div class="empty-state">Threat intelligence queue is clear.</div>
+        {% endfor %}
+    </div>
+</section>
+
+<script>
+window.PHISHGUARD_CHART = {{ timeline|tojson }};
+</script>
+{% endblock %}

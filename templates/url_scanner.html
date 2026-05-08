@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}URL Analysis | PhishGuard AI{% endblock %}
+{% block content %}
+<div class="page-heading hero-heading">
+    <div>
+        <span class="eyebrow"><i class="bi bi-globe2"></i> URL threat analysis</span>
+        <h2>Target URL Scanner</h2>
+        <p>Structure analysis, confidence scoring, and VirusTotal reputation evidence for suspicious domains and links.</p>
+    </div>
+    <div class="system-health">
+        <span class="status-dot online"></span>
+        <div><strong>Scanner Online</strong><small>Local model ready</small></div>
+    </div>
+</div>
+
+<div class="url-workbench premium-workbench">
+    <section class="panel command-panel scan-panel">
+        <div class="panel-title">
+            <div>
+                <h3><i class="bi bi-bullseye"></i> Scan Target</h3>
+                <small>Submit domain, IP host, or full URL</small>
+            </div>
+            <span class="live-chip"><i></i> Armed</span>
+        </div>
+        <form data-url-scan>
+            <label class="input-shell input-shell-xl"><i class="bi bi-link-45deg"></i><input name="url" placeholder="https://secure-update.example/login"></label>
+            <button class="primary-action" type="submit"><i class="bi bi-play-fill"></i> Initiate Scan</button>
+        </form>
+        <div class="scan-sequence">
+            <span class="active">Normalize</span>
+            <span>Extract</span>
+            <span>Score</span>
+            <span>Enrich</span>
+        </div>
+        <div class="engine-console" id="engineConsole">
+            <strong>Engine Console</strong>
+            <p>&gt; Scanner ready.</p>
+            <p>&gt; URL structure, HTTPS state, redirect markers, domain depth, IP usage, and keyword signals standing by.</p>
+        </div>
+    </section>
+
+    <section class="verdict-panel panel" id="urlVerdict">
+        <span>Analysis Verdict</span>
+        <h3>Awaiting Target</h3>
+        <p>Classification, confidence, and recommended response action will appear after analysis.</p>
+        <em>Ready</em>
+    </section>
+
+    <section class="panel signal-summary">
+        <article>
+            <span>Local Triage Confidence</span>
+            <div class="big-ring"><b id="confidenceValue">0%</b></div>
+            <small>Heuristic model output</small>
+        </article>
+        <article>
+            <span>VirusTotal Reputation</span>
+            <div class="reputation-score"><b id="enginesFlagged">0</b><span>/</span><b id="enginesTotal">90</b></div>
+            <small id="vtStatusText">Waiting for scan</small>
+            <a class="outline-action vt-proof-link disabled" id="vtProofLink" href="#" target="_blank" rel="noopener">
+                <i class="bi bi-box-arrow-up-right"></i> Open VirusTotal Report
+            </a>
+        </article>
+    </section>
+
+    <section class="panel indicator-panel">
+        <div class="panel-title">
+            <div>
+                <h3><i class="bi bi-search-heart"></i> Indicator Model</h3>
+                <small>Extracted URL intelligence</small>
+            </div>
+        </div>
+        <div class="indicator-list" id="indicatorList">
+            <div><i class="bi bi-link-45deg"></i><strong>URL Structure</strong><span>Length, redirect markers, and suspicious characters</span><em>Ready</em></div>
+            <div><i class="bi bi-globe2"></i><strong>Domain Signals</strong><span>Subdomain depth, IP-based hostnames, and HTTPS state</span><em>Ready</em></div>
+            <div><i class="bi bi-key"></i><strong>Keyword Matches</strong><span>Credential, urgency, wallet, invoice, and security terms</span><em>Ready</em></div>
+        </div>
+    </section>
+
+    <section class="panel feature-card-panel">
+        <div class="panel-title">
+            <div>
+                <h3><i class="bi bi-sliders2"></i> Feature Breakdown</h3>
+                <small>Model-readable signals</small>
+            </div>
+        </div>
+        <div class="feature-stat-grid" id="urlFeatureCards">
+            <article><span>HTTPS</span><strong>Pending</strong><small>Transport security</small></article>
+            <article><span>Domain Age</span><strong>Enrichment</strong><small>External data required</small></article>
+            <article><span>Symbols</span><strong>0</strong><small>Suspicious characters</small></article>
+            <article><span>Redirects</span><strong>0</strong><small>Redirect markers</small></article>
+            <article><span>IP Host</span><strong>Pending</strong><small>IP-based URL detection</small></article>
+            <article><span>Depth</span><strong>0</strong><small>Subdomain depth</small></article>
+        </div>
+    </section>
+
+    <section class="panel dom-panel features-panel">
+        <div class="panel-title"><h3><small>Signals</small> Extracted Feature Payload</h3></div>
+        <div class="dom-grid feature-grid">
+            <pre id="featureOutput">No URL submitted yet.</pre>
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Reputation Lookup | PhishGuard AI{% endblock %}
+{% block content %}
+<div class="page-heading hero-heading">
+    <div>
+        <span class="eyebrow"><i class="bi bi-crosshair"></i> Threat intelligence</span>
+        <h2>Reputation Lookup</h2>
+        <p>Investigate domains, IP hosts, and URLs with local heuristic scoring and VirusTotal evidence links.</p>
+    </div>
+    <div class="system-health">
+        <span class="status-dot {{ 'online' if vt_status == 'Connected' else 'standby' }}"></span>
+        <div><strong>VirusTotal {{ vt_status }}</strong><small>External intelligence channel</small></div>
+    </div>
+</div>
+
+<div class="reputation-workbench">
+    <section class="panel lookup-command">
+        <div class="panel-title">
+            <div>
+                <h3><i class="bi bi-crosshair"></i> Lookup Target</h3>
+                <small>Domain, IP address, or complete URL</small>
+            </div>
+            <span class="live-chip"><i></i> Intel ready</span>
+        </div>
+        <form data-intel-lookup class="inline-scan">
+            <input name="target" placeholder="Domain, IP, or URL..." value="0012b3a1.89dduvdjsi.shop">
+            <button type="submit"><i class="bi bi-radar"></i> Check Reputation</button>
+        </form>
+        <div class="lookup-hint">
+            <span>Accepted input</span>
+            <strong>domain, IP address, full URL</strong>
+        </div>
+    </section>
+
+    <section class="panel reputation-verdict" id="reputationVerdict">
+        <span>Reputation Verdict</span>
+        <h3>Awaiting Lookup</h3>
+        <p>Reputation summary and local model verdict will appear after lookup.</p>
+    </section>
+
+    <section class="panel vt-evidence-card">
+        <div class="panel-title">
+            <div>
+                <h3><i class="bi bi-virus"></i> VirusTotal Evidence</h3>
+                <small>Vendor detection ratio</small>
+            </div>
+            <strong>{{ vt_status }}</strong>
+        </div>
+        <div class="reputation-score"><b id="intelFlagged">0</b><span>/</span><b id="intelTotal">0</b></div>
+        <p id="intelVtStatus">{{ vt_status }}</p>
+        <div class="meter danger vt-meter"><i id="intelVtMeter" style="width: 0%"></i></div>
+        <a class="outline-action vt-proof-link disabled" id="intelProofLink" href="#" target="_blank" rel="noopener">
+            <i class="bi bi-box-arrow-up-right"></i> Open VirusTotal Report
+        </a>
+    </section>
+
+    <section class="panel local-signal-card">
+        <div class="panel-title">
+            <div>
+                <h3><i class="bi bi-sliders"></i> Local Signals</h3>
+                <small>Heuristic enrichment</small>
+            </div>
+        </div>
+        <div class="signal-list" id="intelSignals">
+            <article><span>Heuristic Score</span><strong>Pending</strong></article>
+            <article><span>Domain</span><strong>Pending</strong></article>
+            <article><span>HTTPS</span><strong>Pending</strong></article>
+            <article><span>Keywords</span><strong>Pending</strong></article>
+        </div>
+    </section>
+
+    <section class="panel vendor-evidence-panel">
+        <div class="panel-title">
+            <div>
+                <h3><i class="bi bi-table"></i> Vendor Evidence</h3>
+                <small>Detection summary</small>
+            </div>
+        </div>
+        <div class="vendor-table" id="vendorSummary">
+            <article><span>Malicious</span><strong>0</strong></article>
+            <article><span>Suspicious</span><strong>0</strong></article>
+            <article><span>Reputation</span><strong>0</strong></article>
+            <article><span>Status</span><strong>{{ vt_status }}</strong></article>
+        </div>
+    </section>
+
+    <section class="panel lookup-evidence">
+        <div class="panel-title"><h3><i class="bi bi-braces"></i> Evidence Summary</h3></div>
+        <pre id="intelResult">No lookup submitted yet.</pre>
+    </section>
+</div>
+{% endblock %}

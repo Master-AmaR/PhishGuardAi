@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Email Analyzer | PhishGuard AI{% endblock %}
+{% block content %}
+<div class="page-heading hero-heading">
+    <div>
+        <span class="eyebrow"><i class="bi bi-envelope-exclamation"></i> Mail threat triage</span>
+        <h2>Email Phishing Analyzer</h2>
+        <p>Header signals, language indicators, embedded URLs, and reputation evidence shaped into an explainable verdict.</p>
+    </div>
+    <div class="system-health">
+        <span class="status-dot online"></span>
+        <div><strong>NLP Heuristics Ready</strong><small>Header parser active</small></div>
+    </div>
+</div>
+
+<div class="email-workbench">
+    <section class="panel email-input-panel">
+        <div class="panel-title">
+            <div>
+                <h3><i class="bi bi-inbox"></i> Raw Email Evidence</h3>
+                <small>Headers and body content</small>
+            </div>
+            <span class="live-chip"><i></i> Parser online</span>
+        </div>
+        <form data-email-scan enctype="multipart/form-data">
+            <textarea name="content" rows="12" placeholder="Paste raw email headers and body here..."></textarea>
+            <div class="upload-row">
+                <input class="form-control pg-file" type="file" name="email_file" accept=".eml,.txt">
+                <button class="primary-action" type="submit"><i class="bi bi-search-heart"></i> Triage Email</button>
+            </div>
+        </form>
+        <div class="nlp-signal-grid">
+            <article><i class="bi bi-key"></i><span>Keyword Model</span><strong>Armed</strong></article>
+            <article><i class="bi bi-fingerprint"></i><span>Auth Headers</span><strong>Watched</strong></article>
+            <article><i class="bi bi-link-45deg"></i><span>URL Extractor</span><strong>Ready</strong></article>
+        </div>
+    </section>
+
+    <section class="panel email-result-panel">
+        <div class="panel-title">
+            <div>
+                <h3><i class="bi bi-card-checklist"></i> Verdict And Evidence</h3>
+                <small>Explainable phishing analysis</small>
+            </div>
+        </div>
+        <div id="emailResult" class="email-result">
+            <div class="empty-state">No email evidence loaded.</div>
+        </div>
+    </section>
+</div>
+{% endblock %}

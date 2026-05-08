@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Detection Logs | PhishGuard AI{% endblock %}
+{% block content %}
+<div class="page-heading with-actions hero-heading">
+    <div>
+        <span class="eyebrow"><i class="bi bi-terminal"></i> Evidence ledger</span>
+        <h2>Detection Logs</h2>
+        <p>Searchable response history with severity, classification, confidence, and action tracking.</p>
+    </div>
+    <div class="toolbar">
+        <input type="search" id="logSearch" placeholder="Search target, category, action...">
+        <a class="outline-action" href="{{ url_for('dashboard.export_logs_csv') }}"><i class="bi bi-download"></i> Export CSV</a>
+    </div>
+</div>
+
+<div class="log-summary-grid">
+    <article><span>Total Events</span><strong>{{ logs|length }}</strong></article>
+    <article><span>Critical/High</span><strong>{{ (logs|selectattr("severity", "equalto", "Critical")|list|length) + (logs|selectattr("severity", "equalto", "High")|list|length) }}</strong></article>
+    <article><span>Blocked</span><strong>{{ logs|selectattr("action_taken", "equalto", "BLOCKED")|list|length }}</strong></article>
+    <article><span>Quarantined</span><strong>{{ logs|selectattr("action_taken", "equalto", "QUARANTINED")|list|length }}</strong></article>
+</div>
+
+<div class="filter-row" data-log-filters>
+    <button class="active" type="button" data-filter="all">All Events</button>
+    <button type="button" data-filter="critical">Critical</button>
+    <button type="button" data-filter="high">High</button>
+    <button type="button" data-filter="medium">Medium</button>
+    <button type="button" data-filter="low">Low</button>
+</div>
+
+<section class="panel log-panel">
+    <div class="table-responsive">
+        <table class="pg-table" id="logsTable">
+            <thead><tr><th></th><th>Timestamp (UTC)</th><th>Target / Source</th><th>Severity</th><th>Event Type</th><th>Confidence</th><th>Action Taken</th></tr></thead>
+            <tbody>
+            {% for log in logs %}
+                <tr data-log-row data-severity="{{ log.severity|lower }}">
+                    <td><button class="row-toggle" type="button" data-expand-log aria-label="Expand log"><i class="bi bi-chevron-right"></i></button></td>
+                    <td>{{ log.created_at }}</td>
+                    <td>{{ log.target_source }}</td>
+                    <td><span class="severity {{ log.severity|lower }}">{{ log.severity }}</span></td>
+                    <td>{{ log.threat_type }}</td>
+                    <td><span class="confidence-pill">{{ log.ai_confidence|int }}%</span></td>
+                    <td><span class="action">{{ log.action_taken }}</span></td>
+                </tr>
+                <tr class="log-detail-row" data-log-detail>
+                    <td colspan="7">
+                        <div class="log-detail">
+                            <article><span>Target</span><strong>{{ log.target_source }}</strong></article>
+                            <article><span>Classification</span><strong>{{ log.threat_type }}</strong></article>
+                            <article><span>Action</span><strong>{{ log.action_taken }}</strong></article>
+                            <article><span>Scan Source</span><strong>{{ log.scan_source }}</strong></article>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="7" class="empty-cell">No detection logs recorded yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <footer>
+        <span id="logCountLabel">Showing {{ logs|length }} entries</span>
+        <span>Page 1 of 1</span>
+    </footer>
+</section>
+{% endblock %}
