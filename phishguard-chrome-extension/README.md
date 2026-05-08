@@ -1,6 +1,6 @@
 # PhishGuard AI Chrome Extension
 
-Manifest V3 extension that warns when the active website looks suspicious.
+Manifest V3 extension that warns when the active website or opened Gmail message looks suspicious.
 
 ## Load Locally
 
@@ -12,3 +12,7 @@ Manifest V3 extension that warns when the active website looks suspicious.
 The extension uses the PhishGuard backend when it is available. If the backend is offline, it falls back to a local URL heuristic and still shows warnings for obvious phishing patterns.
 
 The popup keeps backend details hidden so the result stays simple for normal use.
+
+## Gmail Email Scan
+
+Open a message in Gmail and click **Scan with PhishGuard** in the lower-right corner. The extension sends the visible sender, subject, and message text to the local PhishGuard backend for analysis, then shows the verdict inside Gmail.

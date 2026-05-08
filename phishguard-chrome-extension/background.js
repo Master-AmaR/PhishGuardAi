@@ -54,6 +54,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         });
         return true;
     }
+    if (message?.type === "phishguard:scan-email") {
+        scanEmail(message.email).then(sendResponse).catch((error) => {
+            sendResponse(emailScanError(error));
+        });
+        return true;
+    }
     return false;
 });
 
@@ -148,6 +154,35 @@ async function askBackend(url, settings) {
     };
 }
 
+async function scanEmail(email) {
+    const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), Math.max(settings.requestTimeoutMs, 25000));
+    const formData = new FormData();
+    formData.append("content", buildRawEmail(email));
+
+    const response = await fetch(`${settings.backendUrl.replace(/\/$/, "")}/api/scan/email`, {
+        method: "POST",
+        body: formData,
+        signal: controller.signal
+    }).finally(() => clearTimeout(timeout));
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        throw new Error(payload.error || "Email scan failed");
+    }
+    return payload;
+}
+
+function buildRawEmail(email = {}) {
+    return [
+        `From: ${email.sender || "unknown"}`,
+        `Subject: ${email.subject || "Gmail message"}`,
+        "",
+        email.body || ""
+    ].join("\n");
+}
+
 function shouldPreferBackend(local, backendVerdict) {
     const backendScore = Number(backendVerdict.score || 0);
     const localScore = Number(local.score || 0);
@@ -188,6 +223,20 @@ function scanErrorVerdict(error) {
         score: 0,
         shouldWarn: false,
         reasons: [error?.message || "The scan did not finish. Try again in a moment."]
+    };
+}
+
+function emailScanError(error) {
+    const message = error?.name === "AbortError"
+        ? "The email scan timed out. Make sure the backend is running and try again."
+        : error?.message || "Email scan failed";
+    return {
+        error: message,
+        classification: "Scan unavailable",
+        severity: "Low",
+        threat_score: 0,
+        ml_confidence: 0,
+        reasons: [message]
     };
 }
 
