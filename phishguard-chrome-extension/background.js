@@ -73,6 +73,7 @@ async function scanActiveTab() {
 async function analyzeTab(tabId, url) {
     if (!isScannableUrl(url)) {
         await setSafeBadge(tabId);
+        await chrome.tabs.sendMessage(tabId, { type: "phishguard:verdict", verdict: { shouldWarn: false } }).catch(() => {});
         return null;
     }
 
@@ -299,7 +300,14 @@ function normalizeCacheKey(url) {
 }
 
 function isScannableUrl(url) {
-    return /^https?:\/\//i.test(url || "");
+    if (!/^https?:\/\//i.test(url || "")) return false;
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    return !isLocalhostHost(host);
+}
+
+function isLocalhostHost(host) {
+    return host === "localhost" || host === "127.0.0.1" || host === "::1" || host.endsWith(".localhost");
 }
 
 async function setSafeBadge(tabId) {

@@ -7,7 +7,7 @@
         <h2>Threat Reports</h2>
         <p>Executive-ready phishing evidence summaries with response actions, confidence, and detection metadata.</p>
     </div>
-    <button class="primary-action" onclick="window.print()"><i class="bi bi-filetype-pdf"></i> Generate PDF</button>
+    <button class="primary-action" type="button" data-report-print><i class="bi bi-filetype-pdf"></i> Generate Live PDF</button>
 </div>
 
 <section class="report-shell">
@@ -16,15 +16,16 @@
             <span>PhishGuard AI</span>
             <h3>Cybersecurity Threat Intelligence Report</h3>
             <p>Prepared for Security Operations and Incident Response review.</p>
+            <small>Snapshot: <b data-report-generated>{{ logs[0].created_at if logs else "No evidence yet" }}</b></small>
         </div>
         <i class="bi bi-shield-fill-check"></i>
     </div>
 
     <div class="report-summary">
-        <article><span>Risk Rating</span><strong>{{ logs[0].severity if logs else "Pending" }}</strong></article>
-        <article><span>Primary Vector</span><strong>{{ logs[0].threat_type if logs else "No Evidence" }}</strong></article>
-        <article><span>Recommended Action</span><strong>{{ logs[0].action_taken if logs else "Monitor" }}</strong></article>
-        <article><span>Evidence Items</span><strong>{{ logs|length }}</strong></article>
+        <article><span>Risk Rating</span><strong data-report-risk>{{ logs[0].severity if logs else "Pending" }}</strong></article>
+        <article><span>Primary Vector</span><strong data-report-vector>{{ logs[0].threat_type if logs else "No Evidence" }}</strong></article>
+        <article><span>Recommended Action</span><strong data-report-action>{{ logs[0].action_taken if logs else "Monitor" }}</strong></article>
+        <article><span>Evidence Items</span><strong data-report-count>{{ logs|length }}</strong></article>
     </div>
 
     <div class="report-section-grid">
@@ -39,8 +40,8 @@
             <h4>ML Confidence</h4>
             {% set avg_conf = ((logs|sum(attribute="ai_confidence")) / (logs|length)) if logs else 0 %}
             <div class="report-confidence">
-                <strong>{{ avg_conf|round(1) }}%</strong>
-                <div class="meter safe"><i style="width: {{ avg_conf|round(0, 'floor') }}%"></i></div>
+                <strong data-report-confidence>{{ avg_conf|round(1) }}%</strong>
+                <div class="meter safe"><i data-report-confidence-bar style="width: {{ avg_conf|round(0, 'floor') }}%"></i></div>
             </div>
         </section>
     </div>
@@ -49,7 +50,7 @@
     <div class="table-responsive">
         <table class="pg-table">
             <thead><tr><th>Time</th><th>Target</th><th>Severity</th><th>Confidence</th><th>Action</th></tr></thead>
-            <tbody>
+            <tbody data-report-rows>
             {% for log in logs %}
                 <tr>
                     <td>{{ log.created_at }}</td>

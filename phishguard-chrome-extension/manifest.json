@@ -11,6 +11,7 @@
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],
+      "exclude_matches": ["http://127.0.0.1:5000/*", "http://localhost:5000/*"],
       "js": ["content.js"],
       "run_at": "document_idle"
     },

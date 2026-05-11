@@ -372,6 +372,67 @@ function bindLogSearch() {
     applyFilters();
 }
 
+async function refreshReportSnapshot() {
+    const response = await fetch("/api/reports/snapshot", {
+        headers: { "Accept": "application/json" },
+        cache: "no-store"
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.error || "Report refresh failed");
+
+    const logs = payload.logs || [];
+    const latest = logs[0] || {};
+    const avgConfidence = logs.length
+        ? logs.reduce((sum, log) => sum + Number(log.ai_confidence || 0), 0) / logs.length
+        : 0;
+
+    const setText = (selector, value) => {
+        const node = qs(selector);
+        if (node) node.textContent = value;
+    };
+
+    setText("[data-report-generated]", payload.generated_at || "No evidence yet");
+    setText("[data-report-risk]", latest.severity || "Pending");
+    setText("[data-report-vector]", latest.threat_type || "No Evidence");
+    setText("[data-report-action]", latest.action_taken || "Monitor");
+    setText("[data-report-count]", String(logs.length));
+    setText("[data-report-confidence]", `${avgConfidence.toFixed(1)}%`);
+
+    const confidenceBar = qs("[data-report-confidence-bar]");
+    if (confidenceBar) confidenceBar.style.width = `${Math.floor(avgConfidence)}%`;
+
+    const rows = qs("[data-report-rows]");
+    if (!rows) return;
+    rows.innerHTML = logs.length
+        ? logs.map((log) => `<tr>
+            <td>${escapeHtml(log.created_at)}</td>
+            <td>${escapeHtml(log.target_source)}</td>
+            <td>${escapeHtml(log.severity)}</td>
+            <td>${Math.round(Number(log.ai_confidence || 0))}%</td>
+            <td>${escapeHtml(log.action_taken)}</td>
+        </tr>`).join("")
+        : `<tr><td colspan="5">No scan evidence is available yet.</td></tr>`;
+}
+
+function bindReportPrint() {
+    const button = qs("[data-report-print]");
+    if (!button) return;
+    button.addEventListener("click", async () => {
+        button.dataset.originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = `<span class="button-spinner"></span> Refreshing`;
+        try {
+            await refreshReportSnapshot();
+            window.print();
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            button.disabled = false;
+            button.innerHTML = button.dataset.originalHtml;
+        }
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     bindSidebar();
     initThreatChart();
@@ -379,4 +440,5 @@ document.addEventListener("DOMContentLoaded", () => {
     bindUrlScanners();
     bindEmailScanner();
     bindLogSearch();
+    bindReportPrint();
 });

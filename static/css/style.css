@@ -1922,6 +1922,12 @@ body {
     color: #b9ced4;
 }
 
+.report-cover small {
+    display: block;
+    margin-top: 10px;
+    color: #b9ced4;
+}
+
 .report-cover i {
     color: #7ef4eb;
     font-size: 58px;

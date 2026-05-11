@@ -1,7 +1,7 @@
 from flask import Blueprint, current_app, jsonify, request
 from werkzeug.utils import secure_filename
 
-from models.repositories import create_email_scan, create_url_scan, dashboard_metrics, list_recent_logs, threat_timeline
+from models.repositories import create_email_scan, create_url_scan, dashboard_metrics, list_recent_logs, severity_counts, threat_timeline
 from services.ml_service import analyze_email_content, predict_url
 from services.virustotal_service import VirusTotalService
 from utils.validators import allowed_file, is_valid_url
@@ -27,6 +27,19 @@ def timeline():
 def recent_logs():
     logs = [dict(row) for row in list_recent_logs(10)]
     return jsonify({"logs": logs})
+
+
+@api_bp.get("/reports/snapshot")
+def report_snapshot():
+    logs = [dict(row) for row in list_recent_logs(25)]
+    return jsonify(
+        {
+            "metrics": dashboard_metrics(),
+            "severity_counts": severity_counts(),
+            "logs": logs,
+            "generated_at": logs[0]["created_at"] if logs else "No evidence yet",
+        }
+    )
 
 
 @api_bp.post("/scan/url")

@@ -2,6 +2,10 @@ let banner = null;
 
 chrome.runtime.onMessage.addListener((message) => {
     if (message?.type !== "phishguard:verdict") return;
+    if (isLocalhostPage()) {
+        removeWarning();
+        return;
+    }
     const verdict = message.verdict;
     if (verdict?.shouldWarn) {
         showWarning(verdict);
@@ -11,6 +15,7 @@ chrome.runtime.onMessage.addListener((message) => {
 });
 
 function showWarning(verdict) {
+    if (isLocalhostPage()) return;
     removeWarning();
 
     banner = document.createElement("div");
@@ -117,4 +122,9 @@ function escapeHtml(value) {
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+}
+
+function isLocalhostPage() {
+    const host = window.location.hostname.toLowerCase();
+    return host === "localhost" || host === "127.0.0.1" || host === "::1" || host.endsWith(".localhost");
 }
