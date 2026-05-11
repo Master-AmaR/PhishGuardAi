@@ -49,7 +49,17 @@ def reports():
 def export_logs_csv():
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Timestamp UTC", "Target / Source", "Severity", "Threat Type", "Confidence", "Scan Source", "Action Taken"])
+    writer.writerow([
+        "Timestamp UTC",
+        "Target / Source",
+        "Severity",
+        "Threat Type",
+        "Confidence",
+        "Scan Source",
+        "Action Taken",
+        "Summary",
+        "Important Indicators",
+    ])
     for row in list_all_logs():
         writer.writerow(
             [
@@ -60,6 +70,8 @@ def export_logs_csv():
                 row["ai_confidence"],
                 row["scan_source"],
                 row["action_taken"],
+                row["summary_text"],
+                " | ".join(row.get("indicators", [])),
             ]
         )
     return Response(

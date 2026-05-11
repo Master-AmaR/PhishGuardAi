@@ -337,7 +337,8 @@ function bindLogSearch() {
         let visible = 0;
         qsa("[data-log-row]", table).forEach((row) => {
             const detail = row.nextElementSibling?.matches("[data-log-detail]") ? row.nextElementSibling : null;
-            const matchesSearch = row.textContent.toLowerCase().includes(needle);
+            const searchable = `${row.textContent} ${detail?.textContent || ""}`.toLowerCase();
+            const matchesSearch = searchable.includes(needle);
             const matchesSeverity = severityFilter === "all" || row.dataset.severity === severityFilter;
             const show = matchesSearch && matchesSeverity;
             row.style.display = show ? "" : "none";
@@ -410,8 +411,9 @@ async function refreshReportSnapshot() {
             <td>${escapeHtml(log.severity)}</td>
             <td>${Math.round(Number(log.ai_confidence || 0))}%</td>
             <td>${escapeHtml(log.action_taken)}</td>
+            <td><strong>${escapeHtml(log.summary_text || "")}</strong><ul class="report-indicators">${(log.indicators || []).slice(0, 3).map((indicator) => `<li>${escapeHtml(indicator)}</li>`).join("") || "<li>No additional indicators stored.</li>"}</ul></td>
         </tr>`).join("")
-        : `<tr><td colspan="5">No scan evidence is available yet.</td></tr>`;
+        : `<tr><td colspan="6">No scan evidence is available yet.</td></tr>`;
 }
 
 function bindReportPrint() {

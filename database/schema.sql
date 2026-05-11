@@ -29,6 +29,9 @@ CREATE TABLE IF NOT EXISTS detection_logs (
     ai_confidence REAL NOT NULL,
     scan_source TEXT NOT NULL,
     action_taken TEXT NOT NULL,
+    summary_text TEXT,
+    indicators_json TEXT,
+    pattern_json TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -39,4 +42,16 @@ CREATE TABLE IF NOT EXISTS threat_reports (
     severity TEXT NOT NULL,
     source TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS learned_email_patterns (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    pattern_key TEXT NOT NULL UNIQUE,
+    pattern_label TEXT NOT NULL,
+    severity TEXT NOT NULL,
+    observation_count INTEGER NOT NULL DEFAULT 1,
+    confidence_total REAL NOT NULL DEFAULT 0,
+    indicators_json TEXT,
+    first_seen TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_seen TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

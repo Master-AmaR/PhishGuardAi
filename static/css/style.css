@@ -1884,6 +1884,57 @@ body {
     overflow-wrap: anywhere;
 }
 
+.log-explanation {
+    margin-top: 12px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+}
+
+.log-explanation h4 {
+    margin: 0 0 8px;
+    font-size: 13px;
+}
+
+.log-explanation p,
+.log-explanation li {
+    color: var(--muted);
+    line-height: 1.55;
+}
+
+.log-explanation ul {
+    margin: 0 0 14px 18px;
+    padding: 0;
+}
+
+.pattern-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.pattern-grid article {
+    padding: 10px;
+    background: rgba(11, 16, 20, 0.38);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+}
+
+.pattern-grid span {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 850;
+}
+
+.pattern-grid strong {
+    display: block;
+    margin-top: 5px;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+}
+
 .confidence-pill {
     color: var(--accent-strong);
     font-weight: 850;
@@ -1970,6 +2021,17 @@ body {
 .report-shell p {
     color: #485761;
     line-height: 1.6;
+}
+
+.report-indicators {
+    margin: 8px 0 0 18px;
+    padding: 0;
+}
+
+.report-indicators li {
+    margin-bottom: 5px;
+    color: #485761;
+    line-height: 1.45;
 }
 
 .report-confidence strong {
@@ -2127,6 +2189,7 @@ body {
     .upload-row,
     .nlp-signal-grid,
     .log-detail,
+    .pattern-grid,
     .report-shell .report-summary,
     .report-section-grid,
     .report-response,

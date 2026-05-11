@@ -31,7 +31,7 @@
 <section class="panel log-panel">
     <div class="table-responsive">
         <table class="pg-table" id="logsTable">
-            <thead><tr><th></th><th>Timestamp (UTC)</th><th>Target / Source</th><th>Severity</th><th>Event Type</th><th>Confidence</th><th>Action Taken</th></tr></thead>
+            <thead><tr><th></th><th>Timestamp (UTC)</th><th>Target / Source</th><th>Severity</th><th>Event Type</th><th>Source</th><th>Confidence</th><th>Action Taken</th></tr></thead>
             <tbody>
             {% for log in logs %}
                 <tr data-log-row data-severity="{{ log.severity|lower }}">
@@ -40,21 +40,42 @@
                     <td>{{ log.target_source }}</td>
                     <td><span class="severity {{ log.severity|lower }}">{{ log.severity }}</span></td>
                     <td>{{ log.threat_type }}</td>
+                    <td>{{ log.scan_source }}</td>
                     <td><span class="confidence-pill">{{ log.ai_confidence|int }}%</span></td>
                     <td><span class="action">{{ log.action_taken }}</span></td>
                 </tr>
                 <tr class="log-detail-row" data-log-detail>
-                    <td colspan="7">
+                    <td colspan="8">
                         <div class="log-detail">
                             <article><span>Target</span><strong>{{ log.target_source }}</strong></article>
                             <article><span>Classification</span><strong>{{ log.threat_type }}</strong></article>
                             <article><span>Action</span><strong>{{ log.action_taken }}</strong></article>
                             <article><span>Scan Source</span><strong>{{ log.scan_source }}</strong></article>
                         </div>
+                        <div class="log-explanation">
+                            <h4>What Happened</h4>
+                            <p>{{ log.summary_text }}</p>
+                            <h4>Important Indicators</h4>
+                            <ul>
+                                {% for indicator in log.indicators %}
+                                    <li>{{ indicator }}</li>
+                                {% else %}
+                                    <li>No additional indicators were stored for this event.</li>
+                                {% endfor %}
+                            </ul>
+                            {% if log.pattern %}
+                                <h4>Learned Pattern Profile</h4>
+                                <div class="pattern-grid">
+                                    {% for key, value in log.pattern.items() %}
+                                        <article><span>{{ key|replace("_", " ")|title }}</span><strong>{{ value }}</strong></article>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
             {% else %}
-                <tr><td colspan="7" class="empty-cell">No detection logs recorded yet.</td></tr>
+                <tr><td colspan="8" class="empty-cell">No detection logs recorded yet.</td></tr>
             {% endfor %}
             </tbody>
         </table>

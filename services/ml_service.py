@@ -1,4 +1,5 @@
 import ipaddress
+import hashlib
 import re
 from html import unescape
 from email import policy
@@ -8,6 +9,8 @@ from urllib.parse import parse_qsl, urlparse
 
 import joblib
 from flask import current_app, has_app_context
+
+from database.db import get_db
 
 
 SUSPICIOUS_TERMS = {
@@ -192,6 +195,40 @@ def load_url_model():
     return URL_MODEL_CACHE["model"]
 
 
+def url_indicators(features, score):
+    indicators = []
+    if not features["https_enabled"]:
+        indicators.append("Missing HTTPS increases interception and impersonation risk.")
+    if features["ip_based_url"]:
+        indicators.append("The host is an IP address instead of a recognizable domain.")
+    if features["suspicious_characters"]:
+        indicators.append(f"URL structure contains {features['suspicious_characters']} suspicious symbol(s).")
+    if features["redirect_markers"]:
+        indicators.append(f"Query string contains {features['redirect_markers']} redirect marker(s).")
+    if features["subdomain_depth"] >= 2:
+        indicators.append(f"Domain has deep subdomain nesting: depth {features['subdomain_depth']}.")
+    if features["keyword_hits"]:
+        indicators.append(f"Phishing keyword matches found: {', '.join(features['keyword_hits'])}.")
+    if features["trusted_shopping_domain"] and features["known_marketplace_pattern"]:
+        indicators.append("Trusted marketplace URL pattern reduced the risk score.")
+    if not indicators:
+        indicators.append("No strong local phishing indicators were found.")
+    indicators.append(f"Final URL threat score is {score}/100.")
+    return indicators
+
+
+def url_pattern_profile(features):
+    return {
+        "domain": features.get("domain"),
+        "https_enabled": features.get("https_enabled"),
+        "ip_based_url": features.get("ip_based_url"),
+        "subdomain_depth": features.get("subdomain_depth"),
+        "keyword_hits": features.get("keyword_hits", []),
+        "redirect_markers": features.get("redirect_markers"),
+        "known_marketplace_pattern": features.get("known_marketplace_pattern"),
+    }
+
+
 def predict_url(target_url):
     features = extract_url_features(target_url)
     model = load_url_model()
@@ -251,6 +288,12 @@ def predict_url(target_url):
         "ml_confidence": min(score + 4, 99),
         "severity": severity,
         "action": action,
+        "summary": (
+            f"{classification} verdict for {target_url}: severity {severity}, "
+            f"score {score}/100, action {action}."
+        ),
+        "important_indicators": url_indicators(features, score),
+        "pattern_profile": url_pattern_profile(features),
         "features": features,
         "model_label": model_label,
         "model_confidence": model_confidence,
@@ -277,6 +320,39 @@ def extract_urls_from_text(text):
     for url in urls:
         cleaned.append(url.rstrip(".,;:]}"))
     return cleaned
+
+
+def email_pattern_key(terms, unique_evidence_domains, shortened_urls, reply_to_mismatch, auth_weak, auth_failed, url_count):
+    profile_parts = [
+        f"terms:{','.join(sorted(terms))}",
+        f"domains:{min(len(unique_evidence_domains), 4)}",
+        f"shorteners:{min(len(shortened_urls), 2)}",
+        f"reply:{int(reply_to_mismatch)}",
+        f"authweak:{int(auth_weak)}",
+        f"authfail:{int(auth_failed)}",
+        f"urls:{min(url_count, 5)}",
+    ]
+    raw = "|".join(profile_parts)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:20], raw
+
+
+def learned_email_pattern_signal(pattern_key):
+    if not has_app_context():
+        return None
+    try:
+        row = get_db().execute(
+            """
+            SELECT pattern_label, severity, observation_count, confidence_total
+            FROM learned_email_patterns
+            WHERE pattern_key = ?
+            """,
+            (pattern_key,),
+        ).fetchone()
+    except Exception:
+        return None
+    if not row:
+        return None
+    return dict(row)
 
 
 def analyze_email_content(content):
@@ -308,6 +384,19 @@ def analyze_email_content(content):
 
     unique_domains = sorted(set(domains))
     unique_evidence_domains = sorted({urlparse(url).netloc.lower() for url in evidence_urls if urlparse(url).netloc})
+    reply_to_mismatch = bool(reply_to and sender and reply_to.lower() != sender.lower())
+    auth_failed = bool(authentication_results and any(marker in authentication_results.lower() for marker in ["spf=fail", "dkim=fail", "dmarc=fail"]))
+    auth_weak = bool(authentication_results and any(marker in authentication_results.lower() for marker in ["spf=temperror", "dmarc=temperror", "dkim=none", "compauth=fail"]))
+    pattern_key, pattern_raw = email_pattern_key(
+        terms,
+        unique_evidence_domains,
+        shortened_urls,
+        reply_to_mismatch,
+        auth_weak,
+        auth_failed,
+        len(urls),
+    )
+    learned_signal = learned_email_pattern_signal(pattern_key)
     reasons = []
     if urls:
         reasons.append(f"Contains {len(urls)} embedded URL{'s' if len(urls) != 1 else ''}.")
@@ -317,11 +406,11 @@ def analyze_email_content(content):
         reasons.append(f"Uses {len(shortened_urls)} URL shortener{'s' if len(shortened_urls) != 1 else ''}.")
     if terms:
         reasons.append(f"Suspicious language matched: {', '.join(terms)}.")
-    if reply_to and sender and reply_to.lower() != sender.lower():
+    if reply_to_mismatch:
         reasons.append("Reply-To differs from From header.")
-    if authentication_results and any(marker in authentication_results.lower() for marker in ["spf=fail", "dkim=fail", "dmarc=fail"]):
+    if auth_failed:
         reasons.append("Authentication headers contain SPF, DKIM, or DMARC failure.")
-    if authentication_results and any(marker in authentication_results.lower() for marker in ["spf=temperror", "dmarc=temperror", "dkim=none", "compauth=fail"]):
+    if auth_weak:
         reasons.append("Authentication results are weak or failed, including SPF/DMARC temp error, DKIM none, or composite auth failure.")
     if sender_ip:
         reasons.append(f"Message arrived from sender IP {sender_ip}.")
@@ -350,14 +439,27 @@ def analyze_email_content(content):
     score += min(len(unique_evidence_domains) * 5, 20)
     score += min(len(shortened_urls) * 12, 24)
     score += min(len(terms) * 10, 24)
-    score += 10 if reply_to and sender and reply_to.lower() != sender.lower() else 0
-    score += 14 if authentication_results and any(marker in authentication_results.lower() for marker in ["spf=fail", "dkim=fail", "dmarc=fail"]) else 0
+    score += 10 if reply_to_mismatch else 0
+    score += 14 if auth_failed else 0
     score += 18 if authentication_results and "compauth=fail" in authentication_results.lower() else 0
     score += 8 if authentication_results and "dkim=none" in authentication_results.lower() else 0
     score += 8 if authentication_results and ("spf=temperror" in authentication_results.lower() or "dmarc=temperror" in authentication_results.lower()) else 0
     score += 10 if scl.isdigit() and int(scl) >= 5 else 0
     score += 10 if mentioned_brands and unique_evidence_domains and not trusted_matches else 0
+    if learned_signal and learned_signal["observation_count"] >= 2:
+        learned_label = learned_signal["pattern_label"]
+        if learned_label != "Benign":
+            score += min(learned_signal["observation_count"] * 3, 12)
+            reasons.append(
+                f"Similar email pattern was seen {learned_signal['observation_count']} time(s) before and previously classified as {learned_label}."
+            )
+        else:
+            score -= min(learned_signal["observation_count"] * 2, 8)
+            reasons.append(
+                f"Similar email pattern was seen {learned_signal['observation_count']} time(s) before and previously classified as benign."
+            )
     score = min(score, 98)
+    score = max(score, 0)
 
     classification = "Email Phishing" if score >= 60 else "Benign"
     severity = "High" if score >= 75 else "Medium" if score >= 60 else "Low"
@@ -381,4 +483,22 @@ def analyze_email_content(content):
         "unique_evidence_domains": unique_evidence_domains,
         "shortened_urls": shortened_urls,
         "reasons": reasons,
+        "summary": (
+            f"{classification} verdict for email from {sender or 'unknown'} with subject "
+            f"'{subject or 'Inline analysis'}': severity {severity}, score {score}/100, action {action}."
+        ),
+        "important_indicators": reasons,
+        "pattern_profile": {
+            "pattern_key": pattern_key,
+            "signature": pattern_raw,
+            "url_count": len(urls),
+            "evidence_domain_count": len(unique_evidence_domains),
+            "shortener_count": len(shortened_urls),
+            "reply_to_mismatch": reply_to_mismatch,
+            "auth_failed": auth_failed,
+            "auth_weak": auth_weak,
+            "suspicious_terms": terms,
+            "learned_observations": learned_signal["observation_count"] if learned_signal else 0,
+            "learned_label": learned_signal["pattern_label"] if learned_signal else "new pattern",
+        },
     }

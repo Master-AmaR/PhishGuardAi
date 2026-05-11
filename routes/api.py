@@ -18,7 +18,7 @@ def metrics():
 @api_bp.get("/timeline")
 def timeline():
     window = request.args.get("range", "live")
-    if window not in {"live", "24h", "7d"}:
+    if window not in {"live", "24h", "7d", "all"}:
         window = "live"
     return jsonify({"timeline": threat_timeline(window)})
 
@@ -53,7 +53,8 @@ def scan_url():
     vt_result = VirusTotalService().reputation_lookup(target_url)
     result["virustotal"] = vt_result
     result["vt_detection_ratio"] = vt_result["detection_ratio"]
-    create_url_scan(result)
+    scan_source = "Chrome Extension" if payload.get("scan_source") == "extension" else "URL Scanner"
+    create_url_scan(result, scan_source=scan_source)
     return jsonify(result)
 
 
@@ -84,7 +85,8 @@ def scan_email():
         for url in reputation_targets[:5]
     ]
     result["url_reputation_truncated"] = max(len(reputation_targets) - 5, 0)
-    create_email_scan(result)
+    scan_source = "Chrome Extension Gmail" if request.form.get("scan_source") == "extension" else "Email Analyzer"
+    create_email_scan(result, scan_source=scan_source)
     return jsonify(result)
 
 

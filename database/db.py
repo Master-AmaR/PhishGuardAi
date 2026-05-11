@@ -24,4 +24,20 @@ def init_db(app):
         db = get_db()
         schema_path = Path(__file__).with_name("schema.sql")
         db.executescript(schema_path.read_text(encoding="utf-8"))
+        ensure_schema_upgrades(db)
         db.commit()
+
+
+def ensure_schema_upgrades(db):
+    columns = {
+        row["name"]
+        for row in db.execute("PRAGMA table_info(detection_logs)").fetchall()
+    }
+    upgrades = {
+        "summary_text": "ALTER TABLE detection_logs ADD COLUMN summary_text TEXT",
+        "indicators_json": "ALTER TABLE detection_logs ADD COLUMN indicators_json TEXT",
+        "pattern_json": "ALTER TABLE detection_logs ADD COLUMN pattern_json TEXT",
+    }
+    for column, statement in upgrades.items():
+        if column not in columns:
+            db.execute(statement)

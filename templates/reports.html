@@ -33,7 +33,7 @@
             <h4>Executive Summary</h4>
             <p>
                 Recent detections are consolidated from URL and email triage workflows. Each event includes classification,
-                severity, confidence, source, and response action for audit-ready review.
+                severity, confidence, source, response action, and the evidence indicators that explain why the verdict was reached.
             </p>
         </section>
         <section>
@@ -49,7 +49,7 @@
     <h4>Recent Evidence</h4>
     <div class="table-responsive">
         <table class="pg-table">
-            <thead><tr><th>Time</th><th>Target</th><th>Severity</th><th>Confidence</th><th>Action</th></tr></thead>
+            <thead><tr><th>Time</th><th>Target</th><th>Severity</th><th>Confidence</th><th>Action</th><th>Detection Explanation</th></tr></thead>
             <tbody data-report-rows>
             {% for log in logs %}
                 <tr>
@@ -58,9 +58,19 @@
                     <td>{{ log.severity }}</td>
                     <td>{{ log.ai_confidence|int }}%</td>
                     <td>{{ log.action_taken }}</td>
+                    <td>
+                        <strong>{{ log.summary_text }}</strong>
+                        <ul class="report-indicators">
+                            {% for indicator in log.indicators[:3] %}
+                                <li>{{ indicator }}</li>
+                            {% else %}
+                                <li>No additional indicators stored.</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
                 </tr>
             {% else %}
-                <tr><td colspan="5">No scan evidence is available yet.</td></tr>
+                <tr><td colspan="6">No scan evidence is available yet.</td></tr>
             {% endfor %}
             </tbody>
         </table>

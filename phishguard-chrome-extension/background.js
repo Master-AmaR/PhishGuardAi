@@ -101,14 +101,7 @@ async function getVerdict(url, settings) {
         return cached;
     }
 
-    if (isTrustedDomain(url)) {
-        const verdict = trustedDomainVerdict(url);
-        verdict.checkedAt = Date.now();
-        verdictCache.set(cacheKey, verdict);
-        return verdict;
-    }
-
-    const local = localHeuristic(url);
+    const local = isTrustedDomain(url) ? trustedDomainVerdict(url) : localHeuristic(url);
     let verdict = local;
 
     if (settings.useBackend) {
@@ -127,31 +120,30 @@ async function getVerdict(url, settings) {
 async function askBackend(url, settings) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), settings.requestTimeoutMs);
-    const response = await fetch(`${settings.backendUrl.replace(/\/$/, "")}/api/intel/reputation`, {
+    const response = await fetch(`${settings.backendUrl.replace(/\/$/, "")}/api/scan/url`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target: url }),
+        body: JSON.stringify({ url, scan_source: "extension" }),
         signal: controller.signal
     }).finally(() => clearTimeout(timeout));
     if (!response.ok) throw new Error("Backend scan failed");
 
     const result = await response.json();
-    const heuristic = result.heuristic || {};
     const vt = result.virustotal || {};
     const flagged = Number(vt.malicious || 0) + Number(vt.suspicious || 0);
-    const score = Math.max(Number(heuristic.threat_score || 0), flagged ? 85 : 0);
+    const score = Math.max(Number(result.threat_score || 0), flagged ? 85 : 0);
 
     return {
         url,
         source: "PhishGuard backend",
-        classification: flagged ? "Known suspicious" : heuristic.classification || "Unknown",
-        severity: heuristic.severity || severityFromScore(score),
+        classification: flagged ? "Known suspicious" : result.classification || "Unknown",
+        severity: result.severity || severityFromScore(score),
         score,
-        reasons: [
+        reasons: (result.important_indicators || [
             flagged ? `${flagged} reputation engine flag(s)` : "",
-            heuristic.action || "",
+            result.action || "",
             vt.status ? `VirusTotal: ${vt.status}` : ""
-        ].filter(Boolean)
+        ]).filter(Boolean)
     };
 }
 
@@ -161,6 +153,7 @@ async function scanEmail(email) {
     const timeout = setTimeout(() => controller.abort(), Math.max(settings.requestTimeoutMs, 25000));
     const formData = new FormData();
     formData.append("content", buildRawEmail(email));
+    formData.append("scan_source", "extension");
 
     const response = await fetch(`${settings.backendUrl.replace(/\/$/, "")}/api/scan/email`, {
         method: "POST",

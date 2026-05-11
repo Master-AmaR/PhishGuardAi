@@ -1,107 +1,154 @@
-# PhishGuard AI: Web and Email Phishing Detection System
+# PhishGuard AI: Complete Working Project Report
 
-## 1. Project Overview
+## 1. Project Title
 
-PhishGuard AI is a phishing detection and triage platform built to identify suspicious websites and suspicious email content. The project combines a Flask-based web application, a SQLite evidence database, rule-based and machine-learning-ready analysis logic, VirusTotal reputation enrichment, and a Chrome extension that works on normal websites and Gmail.
+**PhishGuard AI: Web and Email Phishing Detection, Evidence Logging, and Browser Warning System**
 
-The system is designed for cybersecurity awareness, SOC-style triage, and phishing investigation. It allows a user to scan URLs, analyze raw email content, inspect extracted indicators, view threat logs, and receive browser warnings through a Chrome extension.
+PhishGuard AI is a Flask-based cybersecurity project that detects suspicious URLs and phishing emails. It combines a web dashboard, REST APIs, SQLite evidence storage, heuristic and ML-ready detection logic, VirusTotal reputation enrichment, and a Chrome extension for browser and Gmail scanning.
 
-## 2. Problem Statement
+The project is designed as a practical phishing triage platform. It does not only classify something as safe or suspicious; it also explains why the verdict was produced, stores the evidence in detection logs, and makes the same evidence available in reports.
 
-Phishing attacks are one of the most common cybersecurity threats. Attackers often use fake login pages, urgent messages, suspicious links, impersonation, and social engineering to steal credentials or sensitive information.
+## 2. Abstract
 
-Traditional users may not notice signs such as:
+Phishing attacks use fake login pages, urgent emails, misleading domains, suspicious links, and impersonation to steal credentials or sensitive information. PhishGuard AI addresses this problem by scanning URLs and emails for known phishing indicators, generating a risk score, enriching results with external reputation data, and storing findings for review.
 
-- HTTP links instead of HTTPS.
-- Suspicious keywords such as verify, login, password, account, or urgent.
-- Deep subdomains and misleading URL structures.
-- Untrusted domains inside official-looking emails.
-- Email messages asking for immediate action.
-- URLs that require reputation checking through external intelligence sources.
+The system has two main user experiences:
 
-The aim of this project is to provide an easy-to-use phishing detection system that helps users identify risky websites and emails before interacting with them.
+- A Flask web application for dashboards, URL scanning, email analysis, logs, and reports.
+- A Chrome extension that scans active tabs and Gmail messages through the Flask backend.
 
-## 3. Objectives
+The backend stores URL scans, email scans, detection logs, and learned email pattern signatures in SQLite. The detection log now contains a detailed explanation of each event, including important indicators, action taken, scan source, and learned pattern profile.
 
-The main objectives of PhishGuard AI are:
+## 3. Problem Statement
 
-- Detect suspicious URLs using local feature extraction and scoring.
-- Analyze email text for phishing indicators.
-- Extract URLs from email content and check their reputation.
-- Enrich results using VirusTotal when an API key is available.
-- Store scan history and detection logs in a database.
-- Provide a cybersecurity dashboard for monitoring threats.
-- Offer a Chrome extension for real-time website and Gmail scanning.
-- Explain scan results using human-readable reasons.
+Phishing is difficult for normal users to identify because attackers make malicious pages and emails look legitimate. Common attack patterns include:
 
-## 4. Technologies Used
+- Fake login pages.
+- Urgent account verification messages.
+- Password reset or account suspension warnings.
+- URLs containing trusted brand names but hosted on unrelated domains.
+- HTTP links without HTTPS.
+- URL shorteners hiding the final destination.
+- Emails with weak or failed SPF, DKIM, or DMARC authentication.
+- Messages that pressure the user to click a link quickly.
+
+The goal of this project is to provide an explainable phishing detection system that can scan both websites and emails, show risk indicators, and preserve evidence for later review.
+
+## 4. Main Objectives
+
+- Detect suspicious URLs using local feature extraction.
+- Analyze email content for phishing indicators.
+- Extract URLs from emails and check URL reputation.
+- Use VirusTotal reputation data when an API key is configured.
+- Store all scan results in SQLite.
+- Keep a unified detection log for URL scans, email scans, and extension scans.
+- Display detailed explanations in Detection Logs and Reports.
+- Provide a live dashboard with metrics and a threat activity timeline.
+- Add an all-time timeline view for complete scan history.
+- Store learned email pattern signatures so repeated email patterns can influence future scoring.
+- Provide a Chrome extension for active page and Gmail scanning.
+
+## 5. Technology Stack
 
 ### Backend
 
-- Python: Main backend programming language.
-- Flask: Web framework used to build routes, pages, and APIs.
-- SQLite: Local database for scan history and logs.
-- Werkzeug: Used for secure uploaded filename handling.
-- python-dotenv: Loads environment variables from `.env`.
-- requests: Used for VirusTotal API calls.
+- **Python**: Core backend language.
+- **Flask**: Web framework for pages and REST APIs.
+- **SQLite**: Local database for scan history and evidence.
+- **Werkzeug**: Secure file upload filename handling.
+- **python-dotenv**: Loads environment variables from `.env`.
+- **requests**: Used for VirusTotal API calls.
 
-### Machine Learning and Analysis
+### Detection and ML Support
 
-- scikit-learn: Used for model training/inference support.
-- joblib: Used to load the trained URL model from `ml_models/url_model.joblib`.
-- Custom heuristic rules: Used for URL and email phishing scoring.
+- **Custom heuristic scoring**: Primary detection method for URLs and emails.
+- **joblib**: Loads a trained URL model from `ml_models/url_model.joblib`.
+- **scikit-learn**: Used by the model training script.
+- **RandomForestClassifier**: Used in the URL model training pipeline.
+- **DictVectorizer**: Converts extracted URL features into ML model input.
 
 ### Frontend
 
-- HTML/Jinja templates: Flask server-rendered pages.
-- CSS: Custom cybersecurity-themed interface.
-- Bootstrap 5: Responsive layout and UI components.
-- Bootstrap Icons: Icons used in navigation and interface.
-- Chart.js: Threat timeline chart on the dashboard.
-- JavaScript Fetch API: Sends scan requests to backend APIs.
+- **Jinja templates**: Flask-rendered HTML pages.
+- **Custom CSS**: Dashboard, scanner, logs, and report styling.
+- **Bootstrap Icons**: Icons used across the interface.
+- **Chart.js**: Threat activity timeline chart.
+- **JavaScript Fetch API**: Calls backend scan and metrics APIs.
 
 ### Browser Extension
 
-- Chrome Extension Manifest V3.
-- JavaScript service worker background script.
-- Content scripts for webpages and Gmail.
-- Popup UI for active tab scanning.
-- Chrome extension APIs: `tabs`, `storage`, `runtime`, and `action`.
+- **Chrome Extension Manifest V3**.
+- **Service worker background script**.
+- **Content scripts** for websites and Gmail.
+- **Chrome APIs**: `tabs`, `storage`, `runtime`, and `action`.
 
-### Threat Intelligence
+### External Intelligence
 
-- VirusTotal API integration.
-- Offline fallback when VirusTotal API key is not configured.
+- **VirusTotal API v3** for URL reputation.
+- Offline fallback response when no API key is configured.
 
-## 5. System Architecture
+## 6. High-Level Architecture
 
-PhishGuard AI has two major parts:
+```text
+User
+  |
+  |-- Flask Web Dashboard
+  |     |-- URL Scanner
+  |     |-- Email Analyzer
+  |     |-- Detection Logs
+  |     |-- Reports
+  |
+  |-- Chrome Extension
+        |-- Active tab scanner
+        |-- Website warning banner
+        |-- Gmail scan button
 
-1. Flask Web Application
-2. Chrome Extension
+Both clients call:
 
-The Flask application acts as the core analysis engine and dashboard. It exposes web pages and REST API endpoints. The Chrome extension communicates with this backend to scan active websites and Gmail messages.
+Flask API Layer
+  |
+  |-- ML and heuristic detection service
+  |-- VirusTotal reputation service
+  |-- Repository/database layer
+  |
+SQLite Database
+  |
+  |-- url_scans
+  |-- email_scans
+  |-- detection_logs
+  |-- threat_reports
+  |-- learned_email_patterns
+```
 
-### High-Level Flow
+## 7. End-to-End Working Flow
 
-1. User enters a URL in the dashboard or opens a website in Chrome.
-2. The system extracts URL features.
-3. The URL is scored using heuristic rules and, when available, a trained model.
-4. VirusTotal reputation is checked if configured.
-5. A verdict is generated: Benign, Potentially Suspicious, Suspicious Phishing, or Credential Harvesting Phishing.
-6. The result is stored in SQLite.
-7. Dashboard metrics and logs are updated.
-8. The Chrome extension displays warnings or safe results to the user.
+### URL Scan Flow
 
-For Gmail:
+1. User enters a URL in the dashboard or scans a page from the Chrome extension.
+2. Backend validates the URL.
+3. `predict_url()` extracts URL features.
+4. Local heuristic scoring calculates a threat score.
+5. If a trained model exists, model prediction is also used.
+6. VirusTotal reputation lookup is performed.
+7. A final classification, severity, confidence, and action are generated.
+8. URL scan is stored in `url_scans`.
+9. A detailed detection log is stored in `detection_logs`.
+10. Dashboard, timeline, logs, and reports become updated.
 
-1. User opens an email in Gmail.
-2. The Gmail content script extracts visible sender, subject, and body text.
-3. The extension sends the email content to the Flask backend.
-4. Backend analyzes suspicious language, URLs, domains, headers, and reputation.
-5. The verdict is shown directly inside Gmail using a floating result panel.
+### Email Scan Flow
 
-## 6. Project Structure
+1. User pastes email content, uploads `.eml` or `.txt`, or scans a Gmail message through the extension.
+2. Backend parses headers and body text.
+3. URLs, domains, suspicious terms, sender, subject, Reply-To, authentication headers, and spam headers are extracted.
+4. Email risk score is calculated.
+5. URLs inside the email are checked with VirusTotal, up to the configured quota-friendly limit.
+6. Important indicators are generated.
+7. A learned email pattern signature is created and stored.
+8. Email scan is stored in `email_scans`.
+9. A detailed detection log is stored in `detection_logs`.
+10. The result appears in the dashboard, logs, reports, or Gmail result panel.
+
+## 8. Project Folder Structure
 
 ```text
 TTL-project/
@@ -110,16 +157,23 @@ TTL-project/
 |-- requirements.txt
 |-- README.md
 |-- database/
+|   |-- __init__.py
 |   |-- db.py
 |   |-- schema.sql
 |-- models/
+|   |-- __init__.py
 |   |-- repositories.py
 |-- routes/
+|   |-- __init__.py
 |   |-- api.py
 |   |-- dashboard.py
 |-- services/
+|   |-- __init__.py
 |   |-- ml_service.py
 |   |-- virustotal_service.py
+|-- utils/
+|   |-- __init__.py
+|   |-- validators.py
 |-- templates/
 |   |-- base.html
 |   |-- dashboard.html
@@ -130,12 +184,16 @@ TTL-project/
 |-- static/
 |   |-- css/style.css
 |   |-- js/app.js
-|-- ml_models/
-|   |-- url_model.joblib
 |-- scripts/
 |   |-- train_url_model.py
-|-- uploads/
+|-- ml_models/
+|   |-- url_model.joblib
+|-- docs/
+|   |-- PROJECT_REPORT.md
+|   |-- PPT_OUTLINE.md
+|   |-- PROJECT_PRESENTATION_GUIDE.md
 |-- logs/
+|-- uploads/
 |-- phishguard-chrome-extension/
 |   |-- manifest.json
 |   |-- background.js
@@ -144,70 +202,142 @@ TTL-project/
 |   |-- popup.html
 |   |-- popup.css
 |   |-- popup.js
+|   |-- README.md
 ```
 
-## 7. Backend Design
+## 9. File-by-File Purpose
 
-### app.py
+### Root Files
 
-`app.py` creates and configures the Flask application. It loads settings from `config.py`, initializes the database, registers the dashboard routes, and registers API routes under `/api`.
+#### `app.py`
 
-Main responsibilities:
+Creates the Flask application.
 
-- Create Flask app.
-- Load configuration.
-- Initialize SQLite database.
-- Register route blueprints.
-- Start server on `127.0.0.1:5000`.
+Responsibilities:
 
-### config.py
+- Instantiates the Flask app.
+- Loads configuration from `Config`.
+- Initializes the SQLite database.
+- Registers dashboard routes.
+- Registers API routes under `/api`.
+- Starts the development server on `127.0.0.1:5000`.
 
-`config.py` stores application configuration:
+Important function:
 
-- `SECRET_KEY`
-- SQLite database path
-- VirusTotal API key
-- Upload folder
-- Maximum upload size
-- Allowed email extensions
-- ML model path
-- Log file path
+- `create_app(config_class=Config)`: Central Flask application factory.
 
-Environment variables are loaded from `.env`.
+#### `config.py`
 
-### routes/dashboard.py
+Stores application configuration.
 
-This file handles normal web pages:
+Important settings:
 
-- Dashboard
-- URL Scanner
-- Email Analyzer
-- Detection Logs
-- Reports
+- `SECRET_KEY`: Flask secret key.
+- `DATABASE`: SQLite database path.
+- `VIRUSTOTAL_API_KEY`: Optional VirusTotal key.
+- `UPLOAD_FOLDER`: Upload directory.
+- `MAX_CONTENT_LENGTH`: Maximum accepted upload size.
+- `ALLOWED_EMAIL_EXTENSIONS`: Allowed email uploads: `.eml`, `.txt`.
+- `ML_MODEL_PATH`: Path to `ml_models/url_model.joblib`.
+- `LOG_FILE`: Log file path.
 
-These routes render templates and pass data from the database to the frontend.
+#### `requirements.txt`
 
-### routes/api.py
+Lists Python dependencies:
 
-This file provides REST API endpoints:
+- Flask
+- python-dotenv
+- requests
+- joblib
+- scikit-learn
+- email-validator
 
-- `GET /api/metrics`: Returns dashboard metrics.
-- `GET /api/timeline`: Returns threat timeline data.
-- `GET /api/logs/recent`: Returns recent detection logs.
-- `POST /api/scan/url`: Scans a URL.
-- `POST /api/scan/email`: Scans email content or uploaded `.eml/.txt` file.
-- `POST /api/intel/reputation`: Used by the Chrome extension for active tab reputation scanning.
+#### `README.md`
 
-## 8. Database Design
+Short project introduction, setup instructions, API examples, and notes.
 
-The project uses SQLite with the schema in `database/schema.sql`.
+### Package Marker Files
 
-### url_scans
+#### `database/__init__.py`
 
-Stores URL scan results.
+Marks `database/` as a Python package.
 
-Important fields:
+#### `models/__init__.py`
 
+Marks `models/` as a Python package.
+
+#### `routes/__init__.py`
+
+Marks `routes/` as a Python package.
+
+#### `services/__init__.py`
+
+Marks `services/` as a Python package.
+
+#### `utils/__init__.py`
+
+Marks `utils/` as a Python package.
+
+These files do not contain business logic, but they make imports cleaner and keep the project organized as packages.
+
+### Documentation Files
+
+#### `docs/PROJECT_REPORT.md`
+
+This complete working project report.
+
+#### `docs/PPT_OUTLINE.md`
+
+Slide-by-slide outline for creating a project presentation.
+
+#### `docs/PROJECT_PRESENTATION_GUIDE.md`
+
+Presentation speaking guide and explanation support for demonstrating the project.
+
+### Runtime and Artifact Folders
+
+#### `ml_models/url_model.joblib`
+
+Serialized trained URL model loaded by `services/ml_service.py` when available.
+
+#### `uploads/`
+
+Reserved folder for uploaded email files or future uploaded artifacts.
+
+#### `logs/`
+
+Stores runtime log files such as server output files.
+
+#### `myvenv/`
+
+Local Python virtual environment. This is not application source code, but it contains installed project dependencies for local execution.
+
+## 10. Database Layer
+
+### `database/db.py`
+
+Manages SQLite connection and database initialization.
+
+Main functions:
+
+- `get_db()`: Opens and returns a SQLite connection stored in Flask `g`.
+- `close_db()`: Closes the connection after request context ends.
+- `init_db(app)`: Runs schema creation and upgrades.
+- `ensure_schema_upgrades(db)`: Adds newer columns to existing databases without deleting user history.
+
+The upgrade function is important because existing database files may not have newer columns such as `summary_text`, `indicators_json`, and `pattern_json`.
+
+### `database/schema.sql`
+
+Defines all database tables.
+
+#### `url_scans`
+
+Stores individual URL scans.
+
+Columns:
+
+- `id`
 - `target_url`
 - `classification`
 - `threat_score`
@@ -216,12 +346,13 @@ Important fields:
 - `features_json`
 - `created_at`
 
-### email_scans
+#### `email_scans`
 
-Stores email analysis results.
+Stores individual email scans.
 
-Important fields:
+Columns:
 
+- `id`
 - `sender`
 - `subject`
 - `extracted_urls`
@@ -231,287 +362,341 @@ Important fields:
 - `suspicious_terms`
 - `created_at`
 
-### detection_logs
+#### `detection_logs`
 
-Stores unified logs for URL and email detections.
+Stores unified event logs for URL, email, dashboard, and extension scans.
 
-Important fields:
+Columns:
 
+- `id`
 - `target_source`
 - `severity`
 - `threat_type`
 - `ai_confidence`
 - `scan_source`
 - `action_taken`
+- `summary_text`
+- `indicators_json`
+- `pattern_json`
 - `created_at`
 
-### threat_reports
+This table powers the Detection Logs page, CSV export, Reports page, recent logs API, and dashboard streams.
 
-Reserved for report-style threat summaries.
+#### `threat_reports`
 
-Important fields:
+Reserved for saved report-style summaries.
 
+Columns:
+
+- `id`
 - `title`
 - `summary`
 - `severity`
 - `source`
 - `created_at`
 
-## 9. URL Detection Methodology
+#### `learned_email_patterns`
 
-URL analysis is implemented mainly in `services/ml_service.py`.
+Stores repeated email pattern signatures.
 
-The system extracts URL features such as:
+Columns:
 
-- URL length
-- HTTPS availability
-- Suspicious characters
-- Query parameter count
-- Tracking parameter count
-- Redirect markers
-- IP-based host detection
-- Domain name
-- Subdomain depth
-- Keyword hits
-- Trusted shopping domain detection
-- Known marketplace URL patterns
+- `id`
+- `pattern_key`
+- `pattern_label`
+- `severity`
+- `observation_count`
+- `confidence_total`
+- `indicators_json`
+- `first_seen`
+- `last_seen`
 
-The system assigns a threat score based on these features. Examples:
+Purpose:
 
-- Missing HTTPS increases risk.
-- IP-based URLs increase risk.
-- Suspicious characters increase risk.
-- Multiple redirect parameters increase risk.
-- Phishing keywords increase risk.
-- Deep subdomains increase risk.
+- Every email scan generates a pattern signature.
+- If the same pattern appears again, observation count increases.
+- Repeated suspicious patterns can raise future email scores.
+- Repeated benign patterns can slightly reduce future scores.
 
-The final classification is based on score ranges:
+## 11. Repository Layer
 
-- 0-34: Benign / Low
-- 35-54: Potentially Suspicious / Medium
-- 55-79: Suspicious Phishing / High
-- 80-99: Credential Harvesting Phishing / Critical
+### `models/repositories.py`
 
-The app also supports loading a trained ML model from `ml_models/url_model.joblib` using `joblib`.
+This file is the database access layer. Routes do not write SQL directly; they call repository functions.
 
-## 10. Email Detection Methodology
+Main functions:
 
-Email analysis is also implemented in `services/ml_service.py`.
+- `create_url_scan(result, scan_source="URL Scanner")`
+- `create_email_scan(result, scan_source="Email Analyzer")`
+- `create_detection_log(...)`
+- `upsert_email_pattern(result, commit=True)`
+- `list_recent_logs(limit=8)`
+- `list_all_logs()`
+- `dashboard_metrics()`
+- `severity_counts()`
+- `threat_timeline(window="live")`
+- `list_active_threats(limit=3)`
 
-The email scanner parses the message using Python's email parser and extracts:
+Important behavior:
 
-- Sender
-- Subject
-- Reply-To
-- Authentication results
-- Microsoft spam headers, when available
-- Sender IP, when available
-- Plain text body
-- Embedded URLs
-- Evidence domains
-- Suspicious terms
-- URL shorteners
+- URL scans create rows in both `url_scans` and `detection_logs`.
+- Email scans create rows in `email_scans`, `detection_logs`, and `learned_email_patterns`.
+- Detection logs are enriched before display.
+- Older logs that do not have stored indicator JSON are given fallback indicators by analyzing the stored target URL again.
+- Timeline supports `live`, `24h`, `7d`, and `all`.
 
-The email scanner looks for phishing indicators such as:
+### Timeline Windows
 
-- Suspicious keywords: account, verify, urgent, password, suspended, restricted, login, update.
-- Embedded URLs.
-- Multiple unique domains.
-- URL shorteners.
-- Reply-To mismatch.
-- SPF, DKIM, or DMARC failures.
-- Weak authentication results.
-- Elevated spam confidence level.
-- Brand impersonation with unrelated domains.
+- `live`: Last 12 five-minute buckets.
+- `24h`: Last 24 hourly buckets.
+- `7d`: Last 7 daily buckets.
+- `all`: Entire database history. Uses daily buckets for normal history and monthly buckets if history becomes large.
 
-The output includes:
+## 12. Dashboard Routes
 
-- Classification
-- Threat score
-- ML confidence
+### `routes/dashboard.py`
+
+Defines routes for web pages.
+
+#### `GET /`
+
+Renders the main dashboard.
+
+Purpose:
+
+- Shows metrics.
+- Shows threat activity timeline.
+- Shows severity matrix.
+- Shows rapid URL triage.
+- Shows recent detection stream.
+- Shows active threat intelligence.
+
+#### `GET /url-scanner`
+
+Renders the manual URL scanner page.
+
+Purpose:
+
+- Accept URL input.
+- Display verdict, confidence, URL features, VirusTotal information, and indicators.
+
+#### `GET /email-analyzer`
+
+Renders the email analyzer page.
+
+Purpose:
+
+- Paste raw email content.
+- Upload `.eml` or `.txt`.
+- Display email metadata, extracted URLs, suspicious terms, and reasons.
+
+#### `GET /logs`
+
+Renders Detection Logs.
+
+Purpose:
+
+- Show every logged scan.
+- Expand rows for detailed explanation.
+- Show what happened, important indicators, scan source, and learned pattern profile.
+- Search and filter events.
+
+#### `GET /reports`
+
+Renders the Threat Reports page.
+
+Purpose:
+
+- Generate a report-ready view of recent evidence.
+- Display risk rating, primary vector, recommended action, confidence, and event explanations.
+- Browser print can be used to export PDF.
+
+#### `GET /logs/export.csv`
+
+Exports detection logs as CSV.
+
+CSV includes:
+
+- Timestamp
+- Target/source
 - Severity
+- Threat type
+- Confidence
+- Scan source
 - Action
-- Reasons explaining the verdict
-- Extracted URLs
-- URL reputation results
+- Summary
+- Important indicators
 
-## 11. VirusTotal Integration
+## 13. API Routes
 
-`services/virustotal_service.py` integrates with VirusTotal API v3.
+### `routes/api.py`
 
-The service can:
+Defines JSON and form-based API endpoints.
 
-- Normalize URLs.
-- Submit URLs to VirusTotal.
-- Fetch reputation reports.
-- Parse malicious, suspicious, harmless, and undetected counts.
-- Generate a VirusTotal GUI report link.
+### `GET /api/metrics`
 
-If `VIRUSTOTAL_API_KEY` is not configured, the service returns an offline fallback response. This allows the project to keep working even without an API key.
+Purpose:
 
-## 12. Dashboard Features
+- Returns dashboard metric counts.
 
-The dashboard provides a SOC-style interface for phishing triage.
-
-Main dashboard features:
-
-- Total scan count.
-- Phishing detection count.
-- Active threat count.
-- Average confidence metric.
-- Threat timeline chart using Chart.js.
-- Recent detection logs.
-- Sidebar navigation.
-
-The UI is built with:
-
-- Flask templates.
-- Bootstrap.
-- Bootstrap Icons.
-- Custom CSS.
-- JavaScript dynamic updates.
-
-## 13. URL Scanner Page
-
-The URL scanner page allows users to manually enter a URL and analyze it.
-
-It displays:
-
-- Verdict.
-- Threat score.
-- ML confidence.
-- URL features.
-- VirusTotal detection ratio.
-- VirusTotal proof link, when available.
-- Extracted indicators.
-- Recommended action.
-
-## 14. Email Analyzer Page
-
-The email analyzer page allows:
-
-- Pasting raw email content.
-- Uploading `.eml` or `.txt` files.
-- Extracting URLs from email text.
-- Showing suspicious language.
-- Displaying sender and subject metadata.
-- Showing URL reputation evidence.
-
-This page is useful for investigating suspicious emails outside Gmail.
-
-## 15. Detection Logs and Reports
-
-The logs page shows detection history from the database. It supports filtering and searching through JavaScript.
-
-The reports page provides a report-ready interface where scan history and metrics can be reviewed for documentation or presentation.
-
-## 16. Chrome Extension Design
-
-The Chrome extension is stored in `phishguard-chrome-extension/`.
-
-### manifest.json
-
-The extension uses Manifest V3.
-
-Main permissions:
-
-- `storage`: Save settings and cached verdicts.
-- `tabs`: Read active tab information.
-- Host permissions for all URLs, Gmail, and local Flask backend.
-
-Main scripts:
-
-- `background.js`
-- `content.js`
-- `gmail_content.js`
-- `popup.js`
-
-### background.js
-
-The background script acts as the extension's service worker.
-
-Responsibilities:
-
-- Scan active tab URLs.
-- Call the Flask backend reputation endpoint.
-- Use local heuristic fallback when backend is unavailable.
-- Cache verdicts.
-- Set browser action badge warnings.
-- Handle Gmail email scan messages.
-
-### content.js
-
-This script runs on normal websites. It receives verdicts from the background worker and can display warning UI on suspicious pages.
-
-### popup.html, popup.css, popup.js
-
-These files create the extension popup visible when clicking the extension icon.
-
-Popup features:
-
-- Shows active page verdict.
-- Displays score and reasons.
-- Allows user to manually scan the active tab.
-
-### gmail_content.js
-
-This script runs specifically on Gmail.
-
-Responsibilities:
-
-- Inject a floating "Scan with PhishGuard" button.
-- Detect visible email body.
-- Extract sender, subject, and body text.
-- Send the email content to the background script.
-- Display scan result inside Gmail.
-
-The latest improvement makes the floating Gmail button visible on Gmail and shows a helpful message if no email is open.
-
-## 17. API Endpoints
-
-### POST /api/scan/url
-
-Input:
+Response example:
 
 ```json
 {
-  "url": "http://secure-update-login.example.com"
+  "metrics": {
+    "total_scans": 42,
+    "phishing_detections": 31,
+    "active_threats": 12,
+    "ml_accuracy": 71.4
+  }
 }
 ```
 
-Output includes:
+### `GET /api/timeline?range=live`
 
-- Classification
-- Threat score
-- Confidence
-- Severity
-- Action
-- Extracted features
-- VirusTotal result
+Purpose:
 
-### POST /api/scan/email
+- Returns timeline labels and values for Chart.js.
 
-Input can be:
+Supported ranges:
 
-- Form field `content`
-- Uploaded file `email_file`
+- `live`
+- `24h`
+- `7d`
+- `all`
 
-Output includes:
+Example:
 
-- Sender
-- Subject
-- Extracted URLs
-- Suspicious terms
-- Reasons
-- Severity
-- Classification
-- URL reputation
+```http
+GET /api/timeline?range=all
+```
 
-### POST /api/intel/reputation
+Response:
 
-Used by the Chrome extension.
+```json
+{
+  "timeline": {
+    "labels": ["05/07", "05/08", "05/09"],
+    "values": [26, 30, 4]
+  }
+}
+```
 
-Input:
+### `GET /api/logs/recent`
+
+Purpose:
+
+- Returns the 10 most recent enriched detection logs.
+
+Used by:
+
+- Dashboard refreshes.
+- Possible automation or future frontend widgets.
+
+### `GET /api/reports/snapshot`
+
+Purpose:
+
+- Returns report data for live report refresh before printing.
+
+Response includes:
+
+- Metrics
+- Severity counts
+- Recent logs
+- Generated timestamp
+
+### `POST /api/scan/url`
+
+Purpose:
+
+- Main URL scanning endpoint.
+- Used by dashboard URL scanner and Chrome extension.
+- Stores scan result in `url_scans`.
+- Stores detailed detection event in `detection_logs`.
+
+Request:
+
+```json
+{
+  "url": "http://example-login.test/account/verify"
+}
+```
+
+Extension request:
+
+```json
+{
+  "url": "http://example-login.test/account/verify",
+  "scan_source": "extension"
+}
+```
+
+Response includes:
+
+- `target`
+- `classification`
+- `threat_score`
+- `ml_confidence`
+- `severity`
+- `action`
+- `summary`
+- `important_indicators`
+- `pattern_profile`
+- `features`
+- `virustotal`
+- `vt_detection_ratio`
+
+### `POST /api/scan/email`
+
+Purpose:
+
+- Main email scanning endpoint.
+- Accepts pasted email content or uploaded `.eml`/`.txt`.
+- Used by the Email Analyzer page and Gmail extension.
+- Stores scan result in `email_scans`.
+- Stores detection event in `detection_logs`.
+- Updates `learned_email_patterns`.
+
+Form fields:
+
+- `content`: Raw email content.
+- `email_file`: Optional uploaded `.eml` or `.txt`.
+- `scan_source=extension`: Optional marker used by Gmail extension.
+
+Response includes:
+
+- `sender`
+- `subject`
+- `reply_to`
+- `authentication_results`
+- `sender_ip`
+- `classification`
+- `threat_score`
+- `ml_confidence`
+- `severity`
+- `action`
+- `suspicious_terms`
+- `extracted_urls`
+- `evidence_urls`
+- `unique_domains`
+- `unique_evidence_domains`
+- `shortened_urls`
+- `reasons`
+- `summary`
+- `important_indicators`
+- `pattern_profile`
+- `url_reputation`
+
+### `POST /api/intel/reputation`
+
+Purpose:
+
+- Lightweight reputation endpoint.
+- Returns heuristic URL result plus VirusTotal result.
+- Kept for compatibility and external lookup use.
+
+Request:
 
 ```json
 {
@@ -519,122 +704,840 @@ Input:
 }
 ```
 
-Output:
+Response:
 
-- Heuristic result
-- VirusTotal result
-
-## 18. Security Measures
-
-The project includes several safety practices:
-
-- Secrets are loaded from environment variables.
-- File uploads are restricted to `.eml` and `.txt`.
-- Uploaded filenames are sanitized with `secure_filename`.
-- Maximum content length is configured.
-- HTML output is escaped on the frontend.
-- Chrome extension does not expose backend details to normal users.
-- VirusTotal errors are handled gracefully.
-- Local fallback logic keeps scanning available when backend enrichment fails.
-
-## 19. Recent Fixes and Improvements
-
-During testing, the Gmail floating button was not visible on the inbox page. This happened because the script only displayed the button when an email body was already open.
-
-Fix applied:
-
-- The Gmail floating button now appears on Gmail.
-- If no email is selected, it tells the user to open an email first.
-
-A second issue showed "Looks safe: Scan unavailable", which was misleading.
-
-Fix applied:
-
-- Scan failures now show "Scan unavailable" as an unknown/warning state.
-- Email scan timeout was increased to handle slow backend or VirusTotal checks.
-- Real error messages are returned from the background script.
-
-## 20. Testing Performed
-
-Testing included:
-
-- Checking Flask backend metrics endpoint.
-- Testing `/api/scan/email` through PowerShell.
-- Testing Gmail floating button injection.
-- Testing Chrome popup active page scanning.
-- Running JavaScript syntax checks with `node --check`.
-
-Example verified backend endpoint:
-
-```text
-GET http://127.0.0.1:5000/api/metrics
+```json
+{
+  "target": "https://example.com",
+  "heuristic": {},
+  "virustotal": {}
+}
 ```
 
-Example verified email endpoint:
+Note:
+
+- The Chrome extension now uses `/api/scan/url` for active tab scans so those scans are stored in Detection Logs.
+
+## 14. Detection and ML Service
+
+### `services/ml_service.py`
+
+This is the main detection logic file.
+
+It handles:
+
+- URL feature extraction.
+- URL heuristic scoring.
+- Optional trained model loading.
+- URL indicator generation.
+- Email parsing.
+- Email phishing scoring.
+- Email pattern signature generation.
+- Learned email pattern lookup.
+
+## 15. URL Detection Working
+
+### URL Feature Extraction
+
+Function:
+
+- `extract_url_features(target_url)`
+
+Extracted features:
+
+- `url_length`: Total URL length.
+- `https_enabled`: Whether scheme is HTTPS.
+- `suspicious_characters`: Counts `@`, `-`, `_`, `%`.
+- `query_param_count`: Number of query parameters.
+- `tracking_param_count`: Known tracking parameters.
+- `redirect_markers`: Parameters such as `url`, `redirect`, `return_url`, `next`.
+- `ip_based_url`: Whether host is an IP address.
+- `domain`: Parsed host.
+- `subdomain_depth`: Depth of subdomains.
+- `trusted_shopping_domain`: Whether host matches known shopping domains.
+- `known_marketplace_pattern`: Whether URL matches known marketplace product patterns.
+- `keyword_hits`: Suspicious terms found in host or path.
+
+### URL Scoring
+
+Function:
+
+- `predict_url(target_url)`
+
+Base scoring logic:
+
+- Starts from a small base score.
+- Adds score for long URLs.
+- Adds score for missing HTTPS.
+- Adds score for suspicious characters.
+- Adds score for non-tracking query parameters.
+- Adds score for redirect markers.
+- Adds score for IP-based hosts.
+- Adds score for deep subdomain chains.
+- Adds score for phishing keyword hits.
+
+Risk reduction:
+
+- Trusted shopping domains can reduce score.
+- Known marketplace product patterns can reduce score.
+- A confident trained model prediction of legitimate can reduce score.
+
+### URL Classification Thresholds
+
+| Score Range | Classification | Severity | Action |
+| --- | --- | --- | --- |
+| 0-34 | Benign | Low | ALLOWED |
+| 35-54 | Potentially Suspicious | Medium | LOGGED |
+| 55-79 | Suspicious Phishing | High | QUARANTINED |
+| 80-99 | Credential Harvesting Phishing | Critical | BLOCKED |
+
+### URL Explanation Output
+
+The URL scanner returns:
+
+- Human-readable summary.
+- Important indicators.
+- Pattern profile.
+- Raw extracted features.
+
+Example indicators:
+
+- Missing HTTPS increases interception and impersonation risk.
+- URL structure contains suspicious symbols.
+- Query string contains redirect markers.
+- Domain has deep subdomain nesting.
+- Phishing keyword matches were found.
+- Final URL threat score is shown.
+
+## 16. Trained URL Model
+
+### Model Loading
+
+Function:
+
+- `load_url_model()`
+
+The model is loaded from:
 
 ```text
-POST http://127.0.0.1:5000/api/scan/email
+ml_models/url_model.joblib
 ```
 
-## 21. Example Phishing Email Test
+If the model file exists, `joblib.load()` loads it. If not, heuristic detection still works.
 
-Example email:
+### Model Input
+
+Function:
+
+- `url_model_features(features)`
+
+The model receives structured numeric features:
+
+- URL length
+- HTTPS flag
+- Suspicious character count
+- Query parameter count
+- Tracking ratio
+- Redirect markers
+- IP-based URL flag
+- Subdomain depth
+- Trusted shopping domain flag
+- Known marketplace pattern flag
+- Keyword count
+
+### Model Training Script
+
+File:
+
+- `scripts/train_url_model.py`
+
+Working:
+
+1. Reads known legitimate URL patterns from a text file.
+2. Generates suspicious variants using fake login, account update, IP-based, and redirect patterns.
+3. Extracts features using `extract_url_features()`.
+4. Converts features using `DictVectorizer`.
+5. Trains a `RandomForestClassifier`.
+6. Saves the trained pipeline to `ml_models/url_model.joblib`.
+
+Command format:
+
+```powershell
+.\myvenv\Scripts\python.exe scripts\train_url_model.py patterns.txt --output ml_models\url_model.joblib
+```
+
+Current role of the model:
+
+- The project is fully functional with heuristic scoring.
+- The trained model is an enhancement layer.
+- If the model exists, its label and confidence can adjust the final URL score.
+
+## 17. Email Detection Working
+
+### Email Parsing
+
+Function:
+
+- `analyze_email_content(content)`
+
+The email parser extracts:
+
+- Sender
+- Subject
+- Reply-To
+- Authentication-Results
+- X-Microsoft-Antispam
+- X-Sender-IP
+- X-MS-Exchange-Organization-SCL
+- Decoded text body
+- URLs in body
+
+### Email Indicators
+
+The scanner checks for:
+
+- Embedded URLs.
+- Multiple evidence domains.
+- URL shorteners.
+- Suspicious language.
+- Reply-To mismatch.
+- SPF, DKIM, or DMARC failure.
+- Weak authentication results.
+- Composite authentication failure.
+- DKIM missing.
+- Sender IP presence.
+- Elevated Microsoft spam confidence level.
+- High bulk complaint level.
+- Brand impersonation with unrelated domains.
+
+### Suspicious Terms
+
+Examples:
+
+- `account`
+- `verify`
+- `urgent`
+- `password`
+- `suspended`
+- `restricted`
+- `login`
+- `update`
+- `wallet`
+- `invoice`
+- `security alert`
+
+### Email Scoring
+
+Base score starts at 18.
+
+Score increases for:
+
+- Number of URLs.
+- Number of unique evidence domains.
+- URL shorteners.
+- Suspicious terms.
+- Reply-To mismatch.
+- Authentication failures.
+- Weak authentication.
+- High spam confidence.
+- Brand impersonation.
+- Repeated learned suspicious patterns.
+
+Score can slightly decrease when a repeated pattern was previously classified as benign.
+
+### Email Classification
+
+| Score Range | Classification | Severity | Action |
+| --- | --- | --- | --- |
+| 0-59 | Benign | Low | ALLOWED |
+| 60-74 | Email Phishing | Medium | QUARANTINED |
+| 75-98 | Email Phishing | High | QUARANTINED |
+
+### Learned Email Patterns
+
+Every email creates a pattern key based on:
+
+- Suspicious terms.
+- Evidence domain count.
+- URL shortener count.
+- Reply-To mismatch.
+- Weak authentication.
+- Failed authentication.
+- URL count.
+
+The pattern is hashed into a `pattern_key`.
+
+If the same pattern appears again:
+
+- Observation count increases.
+- Previous label is stored.
+- Future scans can use the repeated pattern as an additional signal.
+
+This makes the project stronger over time because repeated phishing structures become part of the local decision context.
+
+## 18. VirusTotal Service
+
+### `services/virustotal_service.py`
+
+This file handles external URL reputation.
+
+Main class:
+
+- `VirusTotalService`
+
+Main methods:
+
+- `enabled`: Checks whether API key is configured.
+- `_normalize_url(target_url)`: Adds HTTP scheme if missing.
+- `_url_id(target_url)`: Creates VirusTotal URL ID.
+- `_gui_url(target_url)`: Builds VirusTotal GUI proof link.
+- `scan_url(target_url)`: Submits URL to VirusTotal.
+- `reputation_lookup(target_url)`: Retrieves existing report or submits URL if unknown.
+- `parse_url_report(payload, target_url)`: Extracts malicious, suspicious, harmless, and undetected counts.
+- `_submitted_response(payload)`: Handles newly submitted URLs.
+- `_error_response(error, target_url)`: Handles API errors safely.
+- `_offline_response(target_url)`: Returns fallback when API key is missing.
+
+Offline fallback is important because the project remains usable without a VirusTotal key.
+
+## 19. Validators
+
+### `utils/validators.py`
+
+Functions:
+
+- `is_valid_url(value)`: Checks whether URL/domain has a valid network location and dot.
+- `allowed_file(filename, allowed_extensions)`: Checks upload extension.
+
+Used by:
+
+- `/api/scan/url`
+- `/api/scan/email`
+
+## 20. Frontend Templates
+
+### `templates/base.html`
+
+Base layout shared by all pages.
+
+Contains:
+
+- HTML skeleton.
+- Sidebar navigation.
+- Top bar.
+- CSS and JS includes.
+- Common page blocks.
+
+### `templates/dashboard.html`
+
+Main dashboard.
+
+Contains:
+
+- Metrics cards.
+- Threat Activity Timeline.
+- Timeline controls: Live, 24H, 7D, All.
+- Severity matrix.
+- Rapid URL triage form.
+- Live detection stream.
+- Active threat intelligence cards.
+
+### `templates/url_scanner.html`
+
+Manual URL scanner page.
+
+Contains:
+
+- URL input form.
+- Analysis verdict panel.
+- Threat score ring.
+- VirusTotal status and proof link.
+- URL feature cards.
+- Indicator list.
+- Engine console output.
+
+### `templates/email_analyzer.html`
+
+Email analysis page.
+
+Contains:
+
+- Raw email textarea.
+- Email file upload.
+- Email verdict panel.
+- Metadata grid.
+- Suspicious term display.
+- URL reputation evidence list.
+
+### `templates/logs.html`
+
+Detection Logs page.
+
+Contains:
+
+- Search box.
+- CSV export button.
+- Severity filters.
+- Expandable log rows.
+- What Happened section.
+- Important Indicators section.
+- Learned Pattern Profile section.
+
+This page now avoids empty explanations by reconstructing indicators for older URL rows when stored indicator JSON is unavailable.
+
+### `templates/reports.html`
+
+Threat report page.
+
+Contains:
+
+- Report cover.
+- Risk summary.
+- Executive summary.
+- ML confidence.
+- Recent evidence table.
+- Detection explanation column.
+- Recommended response.
+- Analyst notes.
+- Print/PDF workflow.
+
+## 21. Static Frontend Files
+
+### `static/css/style.css`
+
+Contains the complete visual design.
+
+Styles:
+
+- Sidebar.
+- Top bar.
+- Dashboard cards.
+- Scanner panels.
+- Timeline and chart containers.
+- Tables.
+- Detection log detail panels.
+- Report layout.
+- Responsive mobile behavior.
+- Print behavior.
+
+### `static/js/app.js`
+
+Main browser-side JavaScript for the Flask web app.
+
+Responsibilities:
+
+- Escape HTML before rendering dynamic values.
+- Initialize Chart.js threat timeline.
+- Refresh timeline data from `/api/timeline`.
+- Switch timeline ranges.
+- Animate dashboard counters.
+- Handle sidebar behavior.
+- Submit URL scans to `/api/scan/url`.
+- Render URL scan results.
+- Submit email scans to `/api/scan/email`.
+- Render email analysis results.
+- Search and filter detection logs.
+- Expand and collapse detection log rows.
+- Refresh report snapshot before printing.
+
+## 22. Chrome Extension
+
+The extension is located in:
 
 ```text
-Subject: Important: Verify Your College Account
+phishguard-chrome-extension/
+```
 
-Dear User,
-We noticed unusual login activity on your college portal account.
-To avoid temporary suspension, please verify your account immediately:
-http://secure-college-verification-demo.test/login
-Failure to verify within 24 hours may result in restricted access.
+Its purpose is to bring PhishGuard scanning into the browser.
+
+### `manifest.json`
+
+Defines the extension.
+
+Important configuration:
+
+- Manifest version 3.
+- Extension name and description.
+- Permissions: `storage`, `tabs`.
+- Host permissions:
+  - All URLs.
+  - Gmail.
+  - Local Flask backend.
+- Background service worker: `background.js`.
+- Content scripts:
+  - `content.js` for normal websites.
+  - `gmail_content.js` for Gmail.
+- Popup files:
+  - `popup.html`
+  - `popup.css`
+  - `popup.js`
+
+### `README.md`
+
+Extension-specific notes for installing, configuring, or explaining the Chrome extension.
+
+### `background.js`
+
+Main extension service worker.
+
+Responsibilities:
+
+- Initializes default settings.
+- Scans tabs when pages finish loading.
+- Scans active tab when extension popup requests it.
+- Uses trusted domain checks.
+- Uses local heuristic fallback.
+- Calls backend `/api/scan/url` when available.
+- Marks extension scans with `scan_source: "extension"` so they appear in Detection Logs.
+- Caches verdicts.
+- Sets warning badge on suspicious tabs.
+- Handles Gmail scan messages.
+- Sends email content to `/api/scan/email`.
+
+Important result:
+
+- Every backend-backed extension URL scan is now visible in Detection Logs.
+
+### `content.js`
+
+Runs on normal websites.
+
+Responsibilities:
+
+- Receives verdict messages from `background.js`.
+- Displays a warning banner when a page is suspicious.
+- Shows classification, score, and top reasons.
+- Allows user to dismiss the warning.
+- Avoids showing warnings on local backend pages.
+
+### `gmail_content.js`
+
+Runs on Gmail.
+
+Responsibilities:
+
+- Adds a floating `Scan with PhishGuard` button.
+- Uses a `MutationObserver` so the button remains available as Gmail changes the DOM.
+- Detects visible email body.
+- Extracts subject, sender, and body text.
+- Sends scan request to background worker.
+- Displays a result panel inside Gmail.
+- Shows safe, medium, danger, or unavailable states.
+
+### `popup.html`
+
+Defines popup structure.
+
+Contains:
+
+- Extension title.
+- Verdict box.
+- Reason card.
+- Scan Active Tab button.
+
+### `popup.css`
+
+Styles the extension popup.
+
+Includes:
+
+- Safe, medium, and danger verdict states.
+- Button styling.
+- Reason list layout.
+
+### `popup.js`
+
+Controls popup behavior.
+
+Responsibilities:
+
+- Loads last verdict from Chrome storage.
+- Automatically scans current page when popup opens.
+- Sends `phishguard:scan-active-tab` message to background worker.
+- Renders classification, score, and reasons.
+- Handles timeout and unavailable states.
+
+## 23. Extension Scan Flow
+
+### Active Tab Scan
+
+1. Chrome tab completes loading.
+2. `background.js` checks if URL is scannable.
+3. If trusted, a low-risk local verdict is produced.
+4. If backend is enabled, extension calls `/api/scan/url`.
+5. Backend scans URL and stores it in Detection Logs.
+6. Background script receives verdict.
+7. If suspicious, browser badge is set and content warning banner is shown.
+8. Popup can show the latest verdict.
+
+### Gmail Scan
+
+1. User opens Gmail.
+2. `gmail_content.js` injects floating scan button.
+3. User opens an email and clicks button.
+4. Gmail content script extracts email text.
+5. Background script sends content to `/api/scan/email`.
+6. Backend scans email and stores log as `Chrome Extension Gmail`.
+7. Gmail panel displays classification, score, and reasons.
+
+## 24. Detection Logs and Reports
+
+Detection Logs are a central part of the project.
+
+Each log answers:
+
+- What target or source was scanned?
+- When was it scanned?
+- Was it safe or suspicious?
+- What severity was assigned?
+- What confidence was produced?
+- What action was taken?
+- Which scanner generated it?
+- Why was this verdict reached?
+- What pattern was learned?
+
+Detailed log fields:
+
+- `summary_text`: Human-readable event summary.
+- `indicators_json`: Important evidence reasons.
+- `pattern_json`: Pattern profile for URL or email.
+
+Reports use the same enriched log data, so the evidence shown in Detection Logs also appears in the report table.
+
+## 25. All-Time Threat Timeline
+
+The dashboard timeline supports four windows:
+
+- Live
+- 24H
+- 7D
+- All
+
+The `All` view reads every row in `detection_logs`.
+
+Behavior:
+
+- If history is short, it groups by day.
+- If history is long, it groups by month.
+- It returns labels and values to Chart.js.
+
+This gives a complete project history view instead of only recent scan windows.
+
+## 26. Report Generation
+
+The Reports page is browser-print based.
+
+Working:
+
+1. User opens Reports.
+2. Page loads recent logs and summary data.
+3. User clicks Generate Live PDF.
+4. Frontend calls `/api/reports/snapshot`.
+5. Report table refreshes with latest evidence.
+6. Browser print dialog opens.
+7. User can save as PDF.
+
+## 27. Security Features
+
+- Environment variables are used for secrets.
+- VirusTotal key is not hardcoded.
+- File uploads are limited to `.eml` and `.txt`.
+- Uploaded filenames are sanitized.
+- Upload size is limited.
+- Frontend dynamic output is escaped.
+- API validates URL input.
+- Extension avoids warning on localhost backend pages.
+- VirusTotal failures return safe structured errors instead of crashing.
+- Offline VirusTotal fallback keeps scans functional without a key.
+
+## 28. Example URL Detection
+
+Input:
+
+```text
+www.dghjdgf.com/paypal.co.uk/cycgi-bin/webscrcmd=_home-customer&nav=1/loading.php
+```
+
+Possible detected indicators:
+
+- Missing HTTPS increases interception and impersonation risk.
+- URL structure contains suspicious symbols.
+- Suspicious brand-like path is present.
+- Final URL threat score is elevated.
+
+Expected output:
+
+- Classification: Suspicious Phishing or Potentially Suspicious.
+- Severity: High or Medium.
+- Action: QUARANTINED or LOGGED.
+- Detection log includes explanation and indicators.
+
+## 29. Example Email Detection
+
+Input:
+
+```text
+From: support@example-login.test
+Subject: Urgent account verification required
+Reply-To: attacker@example.net
+Authentication-Results: spf=fail dkim=none dmarc=fail
+
+Your account will be suspended. Verify your password here:
+http://secure-login-update.example.test/password/reset
 ```
 
 Detected indicators:
 
-- Contains an embedded URL.
-- Uses urgent language.
-- Uses account verification language.
-- Mentions restriction/suspension.
-- Contains login-related keyword.
-- Uses a suspicious verification domain.
+- Contains embedded URL.
+- Suspicious language matched: account, urgent, verify, password, suspended.
+- Reply-To differs from From header.
+- Authentication headers contain SPF, DKIM, or DMARC failure.
+- Authentication results are weak or failed.
+- Final score becomes high enough for phishing classification.
 
-## 22. Advantages
+Expected output:
 
-- Works as both a web app and browser extension.
-- Provides explainable results.
-- Supports email and URL scanning.
-- Stores evidence and logs.
-- Works offline with local rules.
-- Can be enriched with VirusTotal.
-- Has a modular architecture.
-- ML model support is already integrated.
+- Classification: Email Phishing.
+- Severity: High.
+- Action: QUARANTINED.
+- Pattern is stored in `learned_email_patterns`.
 
-## 23. Limitations
+## 30. How to Run the Project
 
-- Current ML model is basic and should be improved with a larger dataset.
-- VirusTotal enrichment requires an API key for live intelligence.
-- Gmail DOM structure may change, requiring content script updates.
-- Email header analysis is stronger when full `.eml` files are available.
-- The system is intended for triage and awareness, not as a complete enterprise mail gateway.
+### Install Dependencies
 
-## 24. Future Enhancements
+```powershell
+python -m venv myvenv
+.\myvenv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
 
-Possible improvements:
+### Configure Environment
 
-- Train a stronger ML model using a larger phishing/legitimate URL dataset.
+Create or update `.env`:
+
+```text
+SECRET_KEY=replace-with-secure-key
+VIRUSTOTAL_API_KEY=optional-api-key
+```
+
+VirusTotal key is optional. The app works without it.
+
+### Start Backend
+
+```powershell
+.\myvenv\Scripts\python.exe app.py
+```
+
+Open:
+
+```text
+http://127.0.0.1:5000
+```
+
+## 31. How to Load the Chrome Extension
+
+1. Open Chrome.
+2. Go to `chrome://extensions`.
+3. Enable Developer Mode.
+4. Click Load unpacked.
+5. Select:
+
+```text
+phishguard-chrome-extension/
+```
+
+6. Keep Flask backend running at:
+
+```text
+http://127.0.0.1:5000
+```
+
+7. Open a website or Gmail and use the extension.
+
+## 32. Testing and Verification
+
+Recommended checks:
+
+### Compile Python
+
+```powershell
+.\myvenv\Scripts\python.exe -m compileall app.py database models routes services utils
+```
+
+### Test Metrics API
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:5000/api/metrics
+```
+
+### Test All-Time Timeline
+
+```powershell
+Invoke-RestMethod "http://127.0.0.1:5000/api/timeline?range=all"
+```
+
+### Test URL Scan
+
+```powershell
+Invoke-RestMethod `
+  -Method Post `
+  -Uri http://127.0.0.1:5000/api/scan/url `
+  -ContentType "application/json" `
+  -Body '{"url":"http://secure-login-example.test/account/verify"}'
+```
+
+### Test Email Scan
+
+```powershell
+curl.exe -X POST http://127.0.0.1:5000/api/scan/email `
+  -F "content=From: test@example.com`nSubject: urgent verify account`n`nClick http://bad-login.test/password"
+```
+
+## 33. Strengths of the Project
+
+- Complete web dashboard and extension integration.
+- URL and email phishing detection in one project.
+- Explainable results instead of only raw classification.
+- SQLite evidence storage.
+- All scans are visible in Detection Logs.
+- Chrome extension scans are logged.
+- Gmail scans are logged.
+- Reports reuse the same evidence as logs.
+- VirusTotal integration adds external intelligence.
+- Offline fallback keeps the system usable.
+- Learned email pattern storage improves repeated-pattern decisions.
+- Modular Flask architecture makes future enhancements easier.
+
+## 34. Current Limitations
+
+- The URL model depends on available training data quality.
+- Heuristic scoring is explainable but can still produce false positives or false negatives.
+- VirusTotal live reputation requires an API key.
+- Gmail DOM selectors may need updates if Gmail changes its interface.
+- Email analysis is strongest with full raw email headers.
+- The project is a triage and awareness platform, not a full enterprise mail gateway.
+- There is no user authentication yet for the dashboard.
+
+## 35. Future Enhancements
+
+- Add user login and role-based access.
+- Add admin settings for thresholds and allowlists.
 - Add domain age and WHOIS intelligence.
-- Add screenshot-based phishing page detection.
-- Add user authentication for dashboard access.
-- Add PDF export for reports.
-- Add role-based SOC workflows.
-- Add browser notification alerts.
+- Add screenshot or page-content phishing detection.
 - Add automatic Gmail link scanning.
-- Add allowlist/blocklist management.
-- Add deployment using Docker.
+- Add blocklist and allowlist management.
+- Add saved incident reports in `threat_reports`.
+- Add PDF generation on backend.
+- Add Docker deployment.
+- Add model retraining workflow using stored scan data.
+- Add feedback buttons: correct/incorrect verdict.
+- Add notification alerts for high-risk extension scans.
 
-## 25. Conclusion
+## 36. Conclusion
 
-PhishGuard AI is a complete phishing triage system that combines web-based analysis, browser-based protection, email scanning, URL feature extraction, database logging, and VirusTotal enrichment. The project demonstrates how cybersecurity detection can be made accessible through explainable scoring, practical dashboards, and real-time browser integration.
+PhishGuard AI is a complete phishing detection and triage system. It combines a Flask backend, SQLite evidence storage, URL and email analysis, VirusTotal enrichment, detailed detection logs, report generation, and a Chrome extension.
 
-The system is modular and extensible, making it suitable for academic demonstration, cybersecurity training, and future improvement into a stronger phishing defense platform.
+The strongest part of the project is explainability. Each scan can show what happened, why it was suspicious or safe, what indicators were detected, what action was taken, and whether a pattern was learned. This makes the project useful not only as a scanner, but also as a cybersecurity learning, investigation, and reporting tool.
+
+With the latest updates, the project now supports detailed detection logs, all-time timeline analysis, extension scan logging, Gmail scan logging, and learned email pattern storage. These improvements make the system more complete, more auditable, and stronger for future ML-based decision making.
