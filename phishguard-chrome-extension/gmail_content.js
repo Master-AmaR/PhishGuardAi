@@ -68,8 +68,12 @@ async function scanCurrentEmail() {
 
 function collectVisibleEmail() {
     const bodyNode = getVisibleEmailBody();
-    const subjectNode = document.querySelector("h2[data-thread-perm-id], h2.hP, [data-legacy-thread-id] h2");
-    const senderNode = document.querySelector(".gD[email], .go, span[email]");
+    const messageNode = bodyNode?.closest(".adn, .gs, [role='listitem']");
+    const subjectNode = messageNode?.querySelector("h2[data-thread-perm-id], h2.hP, [data-legacy-thread-id] h2")
+        || document.querySelector("h2[data-thread-perm-id], h2.hP, [data-legacy-thread-id] h2");
+    const senderNode = messageNode?.querySelector(".gD[email], span[email], .go")
+        || document.querySelector(".adn:not([style*='display: none']) .gD[email], .adn:not([style*='display: none']) span[email], .adn:not([style*='display: none']) .go")
+        || document.querySelector(".gD[email], span[email], .go");
 
     return {
         subject: cleanText(subjectNode?.textContent || document.title.replace(/^Gmail\s*-\s*/i, "")),

@@ -24,7 +24,7 @@ async function scanCurrentPage() {
     button.disabled = true;
     try {
         const verdict = await withTimeout(
-            chrome.runtime.sendMessage({ type: "phishguard:scan-active-tab" }),
+            chrome.runtime.sendMessage({ type: "phishguard:scan-active-tab", forceLog: true }),
             8000
         );
         renderVerdict(verdict);

@@ -49,7 +49,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         return false;
     }
     if (message?.type === "phishguard:scan-active-tab") {
-        scanActiveTab().then(sendResponse).catch((error) => {
+        scanActiveTab({ forceLog: Boolean(message.forceLog) }).then(sendResponse).catch((error) => {
             sendResponse(scanErrorVerdict(error));
         });
         return true;
@@ -63,14 +63,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return false;
 });
 
-async function scanActiveTab() {
+async function scanActiveTab(options = {}) {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id || !tab.url) return null;
 
-    return analyzeTab(tab.id, tab.url);
+    return analyzeTab(tab.id, tab.url, options);
 }
 
-async function analyzeTab(tabId, url) {
+async function analyzeTab(tabId, url, options = {}) {
     if (!isScannableUrl(url)) {
         await setSafeBadge(tabId);
         await chrome.tabs.sendMessage(tabId, { type: "phishguard:verdict", verdict: { shouldWarn: false } }).catch(() => {});
@@ -78,7 +78,7 @@ async function analyzeTab(tabId, url) {
     }
 
     const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS);
-    const verdict = await getVerdict(url, settings);
+    const verdict = await getVerdict(url, settings, options);
     lastVerdict = verdict;
 
     await chrome.storage.local.set({ lastVerdict: verdict });
@@ -94,10 +94,10 @@ async function analyzeTab(tabId, url) {
     return verdict;
 }
 
-async function getVerdict(url, settings) {
+async function getVerdict(url, settings, options = {}) {
     const cacheKey = normalizeCacheKey(url);
     const cached = verdictCache.get(cacheKey);
-    if (cached && Date.now() - cached.checkedAt < settings.cacheTtlMs) {
+    if (!options.forceLog && cached && Date.now() - cached.checkedAt < settings.cacheTtlMs) {
         return cached;
     }
 

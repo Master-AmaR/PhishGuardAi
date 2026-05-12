@@ -56,7 +56,7 @@ def create_email_scan(result, scan_source="Email Analyzer"):
         ),
     )
     create_detection_log(
-        target_source=result.get("sender", "Email body"),
+        target_source=_email_log_target(result),
         severity=result["severity"],
         threat_type=result["classification"],
         ai_confidence=result["ml_confidence"],
@@ -69,6 +69,21 @@ def create_email_scan(result, scan_source="Email Analyzer"):
     )
     upsert_email_pattern(result, commit=False)
     db.commit()
+
+
+def _email_log_target(result):
+    sender = (result.get("sender") or "").strip()
+    subject = (result.get("subject") or "").strip()
+    if subject and sender and sender != "unknown":
+        return f"{subject} - {sender}"
+    if subject:
+        return subject
+    if sender and sender != "unknown":
+        return sender
+    urls = result.get("evidence_urls") or result.get("extracted_urls") or []
+    if urls:
+        return f"Email with link: {urls[0]}"
+    return "Email body"
 
 
 def create_detection_log(
@@ -149,6 +164,8 @@ def _json_value(value, fallback):
 
 def _enrich_log(row):
     item = dict(row)
+    if "Email" in item.get("scan_source", ""):
+        item["target_source"] = _legacy_email_log_target(item) or item["target_source"]
     item["indicators"] = _json_value(item.get("indicators_json"), [])
     item["pattern"] = _json_value(item.get("pattern_json"), {})
     if not item.get("summary_text"):
@@ -161,6 +178,29 @@ def _enrich_log(row):
     if not item["pattern"] and "URL" in item["scan_source"]:
         item["pattern"] = _fallback_url_pattern(item["target_source"])
     return item
+
+
+def _legacy_email_log_target(item):
+    rows = get_db().execute(
+        """
+        SELECT sender, subject, extracted_urls
+        FROM email_scans
+        WHERE created_at = ?
+        ORDER BY id DESC
+        """,
+        (item["created_at"],),
+    ).fetchall()
+    for row in rows:
+        sender = (row["sender"] or "").strip()
+        if sender and sender == item["target_source"]:
+            return _email_log_target(
+                {
+                    "sender": sender,
+                    "subject": row["subject"],
+                    "extracted_urls": _json_value(row["extracted_urls"], []),
+                }
+            )
+    return None
 
 
 def _fallback_indicators(item):
